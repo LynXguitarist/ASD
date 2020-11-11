@@ -4,6 +4,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import protocols.apps.BroadcastApp;
 import protocols.broadcast.flood.FloodBroadcast;
+import protocols.broadcast.eagerPushGossip.EagerPushGossip;
 import protocols.membership.full.SimpleFullMembership;
 import utils.InterfaceToIp;
 
@@ -44,9 +45,12 @@ public class Main {
         logger.info("Hello, I am {}", myself);
 
         // Application
-        BroadcastApp broadcastApp = new BroadcastApp(myself, props, FloodBroadcast.PROTOCOL_ID);
+        BroadcastApp broadcastApp = new BroadcastApp(myself, props, FloodBroadcast.PROTOCOL_ID); //--!!--AQUI--!!--
+
         // Broadcast Protocol
         FloodBroadcast broadcast = new FloodBroadcast(props, myself);
+        //EagerPushGossip broadcast = new EagerPushGossip(props, myself); //--!!--AQUI--!!--
+
         // Membership Protocol
         SimpleFullMembership membership = new SimpleFullMembership(props, myself);
 

@@ -8,17 +8,16 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import protocols.broadcast.common.BroadcastRequest;
 import protocols.broadcast.common.DeliverNotification;
-import protocols.broadcast.flood.FloodBroadcast;
-import protocols.broadcast.flood.messages.FloodMessage;
 import protocols.membership.common.notifications.ChannelCreated;
 import protocols.membership.common.notifications.NeighbourDown;
 import protocols.membership.common.notifications.NeighbourUp;
+import protocols.broadcast.eagerPushGossip.messages.EPGMessage;
 
 import java.io.IOException;
 import java.util.*;
 
 public class EagerPushGossip extends GenericProtocol {
-    private static final Logger logger = LogManager.getLogger(FloodBroadcast.class);
+    private static final Logger logger = LogManager.getLogger(EagerPushGossip.class);
 
     //Protocol information, to register in babel
     public static final String PROTOCOL_NAME = "EagerPushGossip";
@@ -60,10 +59,10 @@ public class EagerPushGossip extends GenericProtocol {
         // Allows this protocol to receive events from this channel.
         registerSharedChannel(cId);
         /*---------------------- Register Message Serializers ---------------------- */
-        registerMessageSerializer(cId, FloodMessage.MSG_ID, FloodMessage.serializer);
+        registerMessageSerializer(cId, EPGMessage.MSG_ID, EPGMessage.serializer);
         /*---------------------- Register Message Handlers -------------------------- */
         try {
-            registerMessageHandler(cId, FloodMessage.MSG_ID, this::uponFloodMessage, this::uponMsgFail);
+            registerMessageHandler(cId, EPGMessage.MSG_ID, this::uponGossipMessage, this::uponMsgFail);
         } catch (HandlerRegistrationException e) {
             logger.error("Error registering message handler: " + e.getMessage());
             e.printStackTrace();
@@ -78,15 +77,15 @@ public class EagerPushGossip extends GenericProtocol {
         if (!channelReady) return;
 
         //Create the message object.
-        FloodMessage msg = new FloodMessage(request.getMsgId(), request.getSender(), sourceProto, request.getMsg());
+        EPGMessage msg = new EPGMessage(request.getMsgId(), request.getSender(), sourceProto, request.getMsg());
 
-        //Call the same handler as when receiving a new FloodMessage (since the logic is the same)
-        uponFloodMessage(msg, myself, getProtoId(), -1);
+        //Call the same handler as when receiving a new GossipMessage (since the logic is the same)
+        uponGossipMessage(msg, myself, getProtoId(), -1);
     }
 
 
     /*--------------------------------- Messages ---------------------------------------- */
-    private void uponFloodMessage(FloodMessage msg, Host from, short sourceProto, int channelId) {
+    private void uponGossipMessage(EPGMessage msg, Host from, short sourceProto, int channelId) {
         logger.trace("Received {} from {}", msg, from);
         //If we already received it once, do nothing (or we would end up with a nasty infinite loop)
         if (received.add(msg.getMid())) {
@@ -99,9 +98,10 @@ public class EagerPushGossip extends GenericProtocol {
             //Calculate fanout
             int fanout = (int) Math.round(Math.log(neighbours.size()));
 
-            int randomNumber = 0;
-            Set<Integer> randomValues = new HashSet<>();;
+            int randomNumber;
+            Set<Integer> randomValues = new HashSet<>();
 
+            //PODEMOS GUARDAR OS HOSTS E VERIFICAR QUE NÃO ENVIA 2X PARA O MESMO PEER, 6 linhas abaixo
             for(int i = 0; i < fanout; i++){
                 //This will generate a random number between 0 and Set.size - 1
                 randomNumber = random.nextInt(neighbours.size());
@@ -109,7 +109,7 @@ public class EagerPushGossip extends GenericProtocol {
                     Host host = (Host) neighbours.toArray()[randomNumber];
                     //Send the message to random subset of neighbors
                     if (!host.equals(from)) {
-                        logger.trace("S ent {} to {}", msg, host);
+                        logger.trace("Sent {} to {}", msg, host);
                         sendMessage(msg, host);
                     }
                 }
