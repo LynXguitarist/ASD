@@ -12,7 +12,6 @@ import protocols.apps.timers.StopTimer;
 import protocols.broadcast.common.BroadcastRequest;
 import protocols.broadcast.common.DeliverNotification;
 
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Properties;
 import java.util.Random;

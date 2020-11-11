@@ -45,11 +45,12 @@ public class Main {
         logger.info("Hello, I am {}", myself);
 
         // Application
-        BroadcastApp broadcastApp = new BroadcastApp(myself, props, FloodBroadcast.PROTOCOL_ID); //--!!--AQUI--!!--
-
+        //BroadcastApp broadcastApp = new BroadcastApp(myself, props, FloodBroadcast.PROTOCOL_ID);
+        BroadcastApp broadcastApp = new BroadcastApp(myself, props, EagerPushGossip.PROTOCOL_ID); 
+        
         // Broadcast Protocol
-        FloodBroadcast broadcast = new FloodBroadcast(props, myself);
-        //EagerPushGossip broadcast = new EagerPushGossip(props, myself); //--!!--AQUI--!!--
+        //FloodBroadcast broadcast = new FloodBroadcast(props, myself);
+        EagerPushGossip broadcast = new EagerPushGossip(props, myself); 
 
         // Membership Protocol
         SimpleFullMembership membership = new SimpleFullMembership(props, myself);
