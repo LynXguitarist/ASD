@@ -81,8 +81,25 @@ public class PlumTree extends GenericProtocol {
             e.printStackTrace();
             System.exit(1);
         }
+
+        try {
+            registerMessageHandler(cId, PruneMessage.MSG_ID, this::uponPronMessage, this::uponMsgFail);
+        } catch (HandlerRegistrationException e) {
+            logger.error("Error registering message handler: " + e.getMessage());
+            e.printStackTrace();
+            System.exit(1);
+        }
+
+
         //Now we can start sending messages
         channelReady = true;
+    }
+
+    private void uponPronMessage(ProtoMessage msg, Host from, short sourceProto, int channelId) {
+
+        eagerPushPeers.remove(from);
+        lazyPushPeers.remove(from);
+
     }
 
     /*--------------------------------- Requests ---------------------------------------- */
