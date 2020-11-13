@@ -100,23 +100,21 @@ public class PlumTree extends GenericProtocol {
     private void uponBroadcastMessage(FloodMessage msg, Host from, short sourceProto, int channelId) {
         logger.trace("Received {} from {}", msg, from);
 
-        logger.info("Message Id: " + msg.getMid());
-
         //If we already received it once, do nothing (or we would end up with a nasty infinite loop)
         if (received.add(msg.getMid())) {
             //Deliver the message to the application (even if it came from it)
             triggerNotification(new DeliverNotification(msg.getMid(), msg.getSender(), msg.getContent()));
 
-            eagerPush(msg, myself);
-            lazyPush(msg, myself);
+            eagerPush(msg, myself); //falta adicionar o round
+            lazyPush(msg, myself); //falta adicionar o round
 
             eagerPushPeers.add(from);
             lazyPushPeers.remove(from);
         } else {
             eagerPushPeers.remove(from);
             lazyPushPeers.add(from);
-
-        }
+            sendMessage(new PruneMessage(UUID.randomUUID(),myself,from),myself);
+        } // ta certo o construtor da classe pruneMessage?
     }
 
     private void eagerPush(FloodMessage msg, Host myself){

@@ -108,8 +108,7 @@ public class EagerPushGossip extends GenericProtocol {
 
 			// PODEMOS GUARDAR OS HOSTS E VERIFICAR QUE NÃO ENVIA 2X PARA O MESMO PEER, 6
 			// linhas abaixo
-			int i = 0;
-			while(i < fanout){
+			for (int i = 0; i < fanout; i++) {
 				// This will generate a random number between 0 and Set.size - 1
 				randomNumber = random.nextInt(neighbours.size());
 				if (randomValues.add(randomNumber)) {
@@ -120,6 +119,7 @@ public class EagerPushGossip extends GenericProtocol {
 						logger.trace("Sent {} to {}", msg, host);
 						sendMessage(msg, host);
 					}
+							i++;
 				}
 
 			}
