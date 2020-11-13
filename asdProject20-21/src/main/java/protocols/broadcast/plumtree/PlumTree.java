@@ -9,6 +9,7 @@ import org.apache.logging.log4j.Logger;
 import protocols.broadcast.common.BroadcastRequest;
 import protocols.broadcast.common.DeliverNotification;
 import protocols.broadcast.flood.messages.FloodMessage;
+import protocols.broadcast.plumtree.messages.PruneMessage;
 import protocols.membership.common.notifications.ChannelCreated;
 import protocols.membership.common.notifications.NeighbourDown;
 import protocols.membership.common.notifications.NeighbourUp;
@@ -34,6 +35,7 @@ public class PlumTree extends GenericProtocol {
     //private final lazyQueue;
 
 
+
     //We can only start sending messages after the membership protocol informed us that the channel is ready
     private boolean channelReady;
 
@@ -55,12 +57,13 @@ public class PlumTree extends GenericProtocol {
         subscribeNotification(NeighbourUp.NOTIFICATION_ID, this::uponNeighbourUp);
         subscribeNotification(NeighbourDown.NOTIFICATION_ID, this::uponNeighbourDown);
         subscribeNotification(ChannelCreated.NOTIFICATION_ID, this::uponChannelCreated);
+
+
+
     }
 
     @Override
     public void init(Properties props) {
-
-
     }
 
     //Upon receiving the channelId from the membership, register our own callbacks and serializers
@@ -112,6 +115,7 @@ public class PlumTree extends GenericProtocol {
         } else {
             eagerPushPeers.remove(from);
             lazyPushPeers.add(from);
+
         }
     }
 
@@ -143,26 +147,7 @@ public class PlumTree extends GenericProtocol {
         for(Host h: notification.getNeighbours()) {
             neighbours.add(h);
             logger.info("New neighbour: " + h);
-
-
-            Random random = new Random();
-
-            int fanout = (int) Math.ceil(Math.log(neighbours.size() + 1));
-
-            int randomNumber;
-            Set<Integer> randomValues = new HashSet<>();
-            logger.info("neighbors :" +  neighbours.size());
-            int i = 0;
-            while(i < fanout){
-                // This will generate a random number between 0 and Set.size - 1
-                randomNumber = random.nextInt(neighbours.size());
-                if (randomValues.add(randomNumber)) {
-                    Host host = (Host) neighbours.toArray()[randomNumber];
-                    eagerPushPeers.add(host);
-                    i++;
-                }
-            }
-
+            eagerPushPeers.add(h);
         }
     }
 
@@ -170,6 +155,10 @@ public class PlumTree extends GenericProtocol {
         for(Host h: notification.getNeighbours()) {
             neighbours.remove(h);
             logger.info("Neighbour down: " + h);
+
+            eagerPushPeers.remove(h);
+            lazyPushPeers.remove(h);
+
         }
     }
 }
