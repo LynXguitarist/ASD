@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Properties;
 import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.Flow.Subscriber;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -24,6 +25,7 @@ import channel.tcp.events.OutConnectionDown;
 import channel.tcp.events.OutConnectionFailed;
 import channel.tcp.events.OutConnectionUp;
 import network.data.Host;
+import protocols.broadcast.common.BroadcastRequest;
 import protocols.membership.common.notifications.ChannelCreated;
 import protocols.membership.common.notifications.NeighbourDown;
 import protocols.membership.common.notifications.NeighbourUp;
@@ -39,7 +41,7 @@ public class Cyclon extends GenericProtocol {
 	private static final Logger logger = LogManager.getLogger(SimpleFullMembership.class);
 
 	// Protocol information, to register in babel
-	public final static short PROTOCOL_ID = 202;
+	public final static short PROTOCOL_ID = 101;
 	public final static String PROTOCOL_NAME = "Cyclon";
 
 	private final Host self; // My own address/port
@@ -48,6 +50,8 @@ public class Cyclon extends GenericProtocol {
 
 	private final int sampleTime; // param: timeout for samples
 	private final int subsetSize; // param: maximum size of sample;
+
+	private Set<Host> pview; // Neighbors sent in the last shuffle
 
 	private final Random rnd;
 
@@ -94,9 +98,9 @@ public class Cyclon extends GenericProtocol {
 		registerTimerHandler(InfoTimer.TIMER_ID, this::uponInfoTime);
 
 		/*-------------------- Register Channel Events ------------------------------- */
-		// MUDAR EVENTOS
-		// ADICIONAR -> UponGetNeighbors, UponShuffle, uponReceive(request), uponReceive(receive), Procedure->mergeView 
-		
+		// ADICIONAR -> UponGetNeighbors, UponShuffle, uponReceive(request),
+		// uponReceive(receive), Procedure->mergeView
+
 		registerChannelEventHandler(channelId, OutConnectionDown.EVENT_ID, this::uponOutConnectionDown);
 		registerChannelEventHandler(channelId, OutConnectionFailed.EVENT_ID, this::uponOutConnectionFailed);
 		registerChannelEventHandler(channelId, OutConnectionUp.EVENT_ID, this::uponOutConnectionUp);
@@ -138,10 +142,30 @@ public class Cyclon extends GenericProtocol {
 			setupPeriodicTimer(new InfoTimer(), pMetricsInterval, pMetricsInterval);
 	}
 
-	/*--------------------------------- Messages ---------------------------------------- */
-	private void uponSample(CyclonMessage msg, Host from, short sourceProto, int channelId) {
-		// MUDAR ISTO
+	private void uponGetNeighbors() {
+		pview = membership;
+		//trigger neighbors(pview)
+	}
 
+	private void uponShuffle() {
+		for(Host neigh : membership) {
+			
+			//pick the oldest neigh
+		}
+	}
+
+	private void mergeView(Set<Host> samplePeers, Set<Host> mySample) {
+		for(Host neigh : samplePeers) {
+			
+		}
+	}
+
+	/*--------------------------------- Messages ---------------------------------------- */
+	private void uponReceive(BroadcastRequest shuffleRequest, Host subscriber, Set<Host> samplePeers) {
+		
+	}
+
+	private void uponSample(CyclonMessage msg, Host from, short sourceProto, int channelId) {
 		// Received a sample from a peer. We add all the unknown peers to the "pending"
 		// map and attempt to establish
 		// a connection. If the connection is successful, we add the peer to the
@@ -198,7 +222,8 @@ public class Cyclon extends GenericProtocol {
 	}
 
 	/*
-	 * --------------------------------- TCPChannel Events ----------------------------
+	 * --------------------------------- TCPChannel Events
+	 * ----------------------------
 	 */
 
 	// If a connection is successfully established, this event is triggered. In this
