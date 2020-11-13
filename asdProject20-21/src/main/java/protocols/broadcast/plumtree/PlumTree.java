@@ -60,23 +60,7 @@ public class PlumTree extends GenericProtocol {
     @Override
     public void init(Properties props) {
 
-        Random random = new Random();
 
-        int fanout = (int) Math.ceil(Math.log(neighbours.size() + 1));
-
-        int randomNumber;
-        Set<Integer> randomValues = new HashSet<>();
-        logger.info("neighbors :" +  neighbours.size());
-        int i = 0;
-        while(i < fanout){
-            // This will generate a random number between 0 and Set.size - 1
-            randomNumber = random.nextInt(neighbours.size());
-            if (randomValues.add(randomNumber)) {
-                Host host = (Host) neighbours.toArray()[randomNumber];
-                eagerPushPeers.add(host);
-                i++;
-            }
-        }
     }
 
     //Upon receiving the channelId from the membership, register our own callbacks and serializers
@@ -166,6 +150,26 @@ public class PlumTree extends GenericProtocol {
         for(Host h: notification.getNeighbours()) {
             neighbours.add(h);
             logger.info("New neighbour: " + h);
+
+
+            Random random = new Random();
+
+            int fanout = (int) Math.ceil(Math.log(neighbours.size() + 1));
+
+            int randomNumber;
+            Set<Integer> randomValues = new HashSet<>();
+            logger.info("neighbors :" +  neighbours.size());
+            int i = 0;
+            while(i < fanout){
+                // This will generate a random number between 0 and Set.size - 1
+                randomNumber = random.nextInt(neighbours.size());
+                if (randomValues.add(randomNumber)) {
+                    Host host = (Host) neighbours.toArray()[randomNumber];
+                    eagerPushPeers.add(host);
+                    i++;
+                }
+            }
+
         }
     }
 

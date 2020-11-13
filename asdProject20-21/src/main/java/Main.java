@@ -47,13 +47,13 @@ public class Main {
 
         // Application
         //BroadcastApp broadcastApp = new BroadcastApp(myself, props, FloodBroadcast.PROTOCOL_ID);
-        BroadcastApp broadcastApp = new BroadcastApp(myself, props, EagerPushGossip.PROTOCOL_ID);
-        //BroadcastApp broadcastApp = new BroadcastApp(myself, props, PlumTree.PROTOCOL_ID);
+        //BroadcastApp broadcastApp = new BroadcastApp(myself, props, EagerPushGossip.PROTOCOL_ID);
+        BroadcastApp broadcastApp = new BroadcastApp(myself, props, PlumTree.PROTOCOL_ID);
         
         // Broadcast Protocol
         //FloodBroadcast broadcast = new FloodBroadcast(props, myself);
-        EagerPushGossip broadcast = new EagerPushGossip(props, myself);
-        //PlumTree broadcast = new PlumTree(props, myself);
+        //EagerPushGossip broadcast = new EagerPushGossip(props, myself);
+        PlumTree broadcast = new PlumTree(props, myself);
 
         // Membership Protocol
         SimpleFullMembership membership = new SimpleFullMembership(props, myself);

@@ -114,9 +114,9 @@ public class EagerPushGossip extends GenericProtocol {
 				randomNumber = random.nextInt(neighbours.size());
 				if (randomValues.add(randomNumber)) {
 					Host host = (Host) neighbours.toArray()[randomNumber];
+					i++;
 					// Send the message to random subset of neighbors
 					if (!host.equals(from)) {
-						i++;
 						logger.trace("Sent {} to {}", msg, host);
 						sendMessage(msg, host);
 					}
