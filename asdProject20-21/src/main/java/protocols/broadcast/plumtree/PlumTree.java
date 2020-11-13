@@ -130,13 +130,6 @@ public class PlumTree extends GenericProtocol {
         });
     }
 
-
-
-
-
-
-
-
     private void uponMsgFail(ProtoMessage msg, Host host, short destProto,
                              Throwable throwable, int channelId) {
         //If a message fails to be sent, for whatever reason, log the message and the reason

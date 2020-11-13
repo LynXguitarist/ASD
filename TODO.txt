@@ -1,0 +1,1 @@
+- Fazer atraves dos args, qual o protocolo para usar de Broadcast e Network
