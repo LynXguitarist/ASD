@@ -108,13 +108,15 @@ public class EagerPushGossip extends GenericProtocol {
 
 			// PODEMOS GUARDAR OS HOSTS E VERIFICAR QUE NÃO ENVIA 2X PARA O MESMO PEER, 6
 			// linhas abaixo
-			for (int i = 0; i < fanout; i++) {
+			int i = 0;
+			while(i < fanout){
 				// This will generate a random number between 0 and Set.size - 1
 				randomNumber = random.nextInt(neighbours.size());
 				if (randomValues.add(randomNumber)) {
 					Host host = (Host) neighbours.toArray()[randomNumber];
 					// Send the message to random subset of neighbors
 					if (!host.equals(from)) {
+						i++;
 						logger.trace("Sent {} to {}", msg, host);
 						sendMessage(msg, host);
 					}

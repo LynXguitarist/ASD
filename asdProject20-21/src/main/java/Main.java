@@ -5,6 +5,7 @@ import org.apache.logging.log4j.Logger;
 import protocols.apps.BroadcastApp;
 import protocols.broadcast.flood.FloodBroadcast;
 import protocols.broadcast.eagerPushGossip.EagerPushGossip;
+import protocols.broadcast.plumtree.PlumTree;
 import protocols.membership.full.SimpleFullMembership;
 import utils.InterfaceToIp;
 
@@ -46,19 +47,24 @@ public class Main {
 
         // Application
         //BroadcastApp broadcastApp = new BroadcastApp(myself, props, FloodBroadcast.PROTOCOL_ID);
-        BroadcastApp broadcastApp = new BroadcastApp(myself, props, EagerPushGossip.PROTOCOL_ID); 
+        BroadcastApp broadcastApp = new BroadcastApp(myself, props, EagerPushGossip.PROTOCOL_ID);
+        //BroadcastApp broadcastApp = new BroadcastApp(myself, props, PlumTree.PROTOCOL_ID);
         
         // Broadcast Protocol
         //FloodBroadcast broadcast = new FloodBroadcast(props, myself);
-        EagerPushGossip broadcast = new EagerPushGossip(props, myself); 
+        EagerPushGossip broadcast = new EagerPushGossip(props, myself);
+        //PlumTree broadcast = new PlumTree(props, myself);
 
         // Membership Protocol
         SimpleFullMembership membership = new SimpleFullMembership(props, myself);
+
 
         //Register applications in babel
         babel.registerProtocol(broadcastApp);
         babel.registerProtocol(broadcast);
         babel.registerProtocol(membership);
+
+
 
         //Init the protocols. This should be done after creating all protocols, since there can be inter-protocol
         //communications in this step.
