@@ -7,6 +7,7 @@ import protocols.broadcast.flood.FloodBroadcast;
 import protocols.broadcast.eagerPushGossip.EagerPushGossip;
 import protocols.broadcast.plumtree.PlumTree;
 import protocols.membership.full.SimpleFullMembership;
+import protocols.network.cyclon.Cyclon;
 import utils.InterfaceToIp;
 
 import java.net.InetAddress;
@@ -48,28 +49,28 @@ public class Main {
         // Application
         //BroadcastApp broadcastApp = new BroadcastApp(myself, props, FloodBroadcast.PROTOCOL_ID);
         //BroadcastApp broadcastApp = new BroadcastApp(myself, props, EagerPushGossip.PROTOCOL_ID);
-        BroadcastApp broadcastApp = new BroadcastApp(myself, props, PlumTree.PROTOCOL_ID);
+        //BroadcastApp broadcastApp = new BroadcastApp(myself, props, PlumTree.PROTOCOL_ID);
         
         // Broadcast Protocol
         //FloodBroadcast broadcast = new FloodBroadcast(props, myself);
         //EagerPushGossip broadcast = new EagerPushGossip(props, myself);
-        PlumTree broadcast = new PlumTree(props, myself);
+        //PlumTree broadcast = new PlumTree(props, myself);
 
         // Membership Protocol
-        SimpleFullMembership membership = new SimpleFullMembership(props, myself);
-
+        //SimpleFullMembership membership = new SimpleFullMembership(props, myself);
+        Cyclon membership = new Cyclon(props, myself);
 
         //Register applications in babel
-        babel.registerProtocol(broadcastApp);
-        babel.registerProtocol(broadcast);
+        //babel.registerProtocol(broadcastApp);
+        //babel.registerProtocol(broadcast);
         babel.registerProtocol(membership);
 
 
 
         //Init the protocols. This should be done after creating all protocols, since there can be inter-protocol
         //communications in this step.
-        broadcastApp.init(props);
-        broadcast.init(props);
+        //broadcastApp.init(props);
+       //broadcast.init(props);
         membership.init(props);
 
         //Start babel and protocol threads

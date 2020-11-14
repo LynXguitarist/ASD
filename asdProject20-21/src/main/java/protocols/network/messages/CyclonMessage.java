@@ -11,7 +11,7 @@ import java.util.Map;
 
 public class CyclonMessage extends ProtoMessage {
 
-    public final static short MSG_ID = 101;
+    public final static short MSG_ID = 102;
 
     private final Map<Host, Integer> sample;
 

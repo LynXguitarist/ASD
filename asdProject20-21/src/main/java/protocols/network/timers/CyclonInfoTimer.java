@@ -4,7 +4,7 @@ import babel.generic.ProtoTimer;
 
 public class CyclonInfoTimer extends ProtoTimer {
 
-	public static final short TIMER_ID = 101;
+	public static final short TIMER_ID = 111;
 
 	public CyclonInfoTimer() {
 	        super(TIMER_ID);

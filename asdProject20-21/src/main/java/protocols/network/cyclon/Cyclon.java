@@ -5,17 +5,13 @@ import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Random;
 import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.Flow.Subscriber;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -128,8 +124,9 @@ public class Cyclon extends GenericProtocol {
 				String[] hostElems = contact.split(":");
 				Host contactHost = new Host(InetAddress.getByName(hostElems[0]), Short.parseShort(hostElems[1]));
 				// We add to the pending set until the connection is successful
-				membership.put(contactHost, 0);
+				pending.put(contactHost,0);
 				openConnection(contactHost);
+				membership.put(contactHost, 0);
 			} catch (Exception e) {
 				logger.error("Invalid contact on configuration: '" + props.getProperty("contacts"));
 				e.printStackTrace();
@@ -163,12 +160,11 @@ public class Cyclon extends GenericProtocol {
 				oldest = entry;
 		}
 
-		if (oldest != null)
+		if (oldest != null){
 			sampleHosts = getRandomSubsetExcluding(membership, subsetSize, oldest.getKey());
-
-		sampleHosts.put(self, 0);
-		// triggerSend ShuffleRequest, oldest, sampleHost
-		sendMessage(new CyclonMessage(sampleHosts), oldest.getKey());
+			sampleHosts.put(self, 0);
+			sendMessage(new CyclonMessage(sampleHosts), oldest.getKey());
+		}
 	}
 
 	private void uponReceiveShuffle(CyclonMessage msg, Host from, short sourceProto, int channelId) {

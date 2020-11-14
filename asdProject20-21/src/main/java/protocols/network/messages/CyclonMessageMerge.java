@@ -11,7 +11,7 @@ import java.util.Map;
 
 public class CyclonMessageMerge extends ProtoMessage {
 
-    public final static short MSG_ID = 102;
+    public final static short MSG_ID = 103;
 
     private final Map<Host, Integer> sample;
 
@@ -31,7 +31,7 @@ public class CyclonMessageMerge extends ProtoMessage {
                 '}';
     }
 
-    public static ISerializer<CyclonMessageMerge> serializer = new ISerializer<CyclonMessageMerge>() {
+    public static ISerializer<CyclonMessageMerge> serializer = new ISerializer<>() {
         @Override
         public void serialize(CyclonMessageMerge sampleMessage, ByteBuf out) throws IOException {
             out.writeInt(sampleMessage.sample.size());
