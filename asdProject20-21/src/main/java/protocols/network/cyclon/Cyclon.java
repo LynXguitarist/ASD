@@ -161,19 +161,25 @@ public class Cyclon extends GenericProtocol {
 		}
 
 		if (oldest != null){
+			logger.info("Oldest Neighbour: "+ oldest.getKey());
 			sampleHosts = getRandomSubsetExcluding(membership, subsetSize, oldest.getKey());
 			sampleHosts.put(self, 0);
+			logger.info("Sample Hosts: "+ sampleHosts);
 			sendMessage(new CyclonMessage(sampleHosts), oldest.getKey());
 		}
 	}
 
 	private void uponReceiveShuffle(CyclonMessage msg, Host from, short sourceProto, int channelId) {
-		Map<Host, Integer> tmpSample = getRandomSubset(membership, membership.size());
 		// temporarySample
+		logger.info("HOST from: "+from);
+		Map<Host, Integer> tmpSample = getRandomSubset(membership, membership.size());
 		Map<Host, Integer> samplePeers = msg.getSample();
+
 		// Trigger Send (ShuffleReply, s, temporarySample);
-		sendMessage(new CyclonMessageMerge(tmpSample), from);
+
 		mergeView(samplePeers, tmpSample);
+		sendMessage(new CyclonMessageMerge(tmpSample), from);
+
 	}
 
 	private void uponReceiveShuffleReply(CyclonMessageMerge msg, Host from, short sourceProto, int channelId) {
@@ -181,26 +187,36 @@ public class Cyclon extends GenericProtocol {
 	}
 
 	private void mergeView(Map<Host, Integer> samplePeers, Map<Host, Integer> mySample) {
+		logger.info("TOU A CHEGAR AQUI -> MERGE VIEW");
 		Map<Host, Integer> result = membership;
 
 		for (Map.Entry<Host, Integer> entry : samplePeers.entrySet()) {
 			Host peer = entry.getKey();
 			int age = entry.getValue();
-
-			if (membership.containsKey(peer) && membership.get(peer) > age)
+			logger.info("TOU A CHEGAR AQUI2 -> MERGE VIEW");
+			if (membership.containsKey(peer) && membership.get(peer) > age){
+				logger.info("entrei no primeiro if");
 				membership.put(peer, age);
-			else if (membership.size() < CACHE_SIZE)
+			}
+			else if(membership.size() < CACHE_SIZE){
 				membership.put(peer, age);
+				openConnection(peer);
+			}
 			else {
+				logger.info("entrada do else");
 				result.keySet().retainAll(mySample.keySet());
+				//logger.info(result.keySet().toArray()[0]);
 				// elem in neigh that is also in mySample
+				logger.info("antes do random");
 				Host h = getRandom(result.keySet());
+				logger.info("Host h:"+ h );
 				if (result.isEmpty()) {
 					// random elem to be replaced
 					h = getRandom(membership.keySet());
 				}
 				membership.remove(h);
 				membership.put(peer, age);
+				openConnection(peer);
 			}
 		}
 	}
