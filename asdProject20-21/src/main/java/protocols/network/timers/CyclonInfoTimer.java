@@ -2,11 +2,11 @@ package protocols.network.timers;
 
 import babel.generic.ProtoTimer;
 
-public class CyclonTimer extends ProtoTimer {
+public class CyclonInfoTimer extends ProtoTimer {
 
 	public static final short TIMER_ID = 101;
 
-	public CyclonTimer() {
+	public CyclonInfoTimer() {
 	        super(TIMER_ID);
 	    }
 
