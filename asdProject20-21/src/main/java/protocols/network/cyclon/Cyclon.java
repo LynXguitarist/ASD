@@ -14,6 +14,7 @@ import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Random;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.Flow.Subscriber;
 
 import org.apache.logging.log4j.LogManager;
@@ -22,7 +23,6 @@ import org.apache.logging.log4j.Logger;
 import babel.core.GenericProtocol;
 import babel.exceptions.HandlerRegistrationException;
 import babel.generic.ProtoMessage;
-import babel.generic.ProtoRequest;
 import channel.tcp.TCPChannel;
 import channel.tcp.events.ChannelMetrics;
 import channel.tcp.events.InConnectionDown;
@@ -31,12 +31,12 @@ import channel.tcp.events.OutConnectionDown;
 import channel.tcp.events.OutConnectionFailed;
 import channel.tcp.events.OutConnectionUp;
 import network.data.Host;
-import protocols.broadcast.common.BroadcastRequest;
 import protocols.membership.common.notifications.ChannelCreated;
 import protocols.membership.common.notifications.NeighbourDown;
 import protocols.membership.common.notifications.NeighbourUp;
 import protocols.network.cyclon.notifications.Neighbours;
 import protocols.network.messages.CyclonMessage;
+import protocols.network.messages.CyclonMessageMerge;
 import protocols.network.timers.CyclonInfoTimer;
 import protocols.network.timers.CyclonSampleTimer;
 
@@ -98,15 +98,14 @@ public class Cyclon extends GenericProtocol {
 		registerMessageSerializer(channelId, CyclonMessage.MSG_ID, CyclonMessage.serializer);
 
 		/*---------------------- Register Message Handlers -------------------------- */
-		registerMessageHandler(channelId, CyclonMessage.MSG_ID, this::uponSample, this::uponMsgFail);
+		registerMessageHandler(channelId, CyclonMessage.MSG_ID, this::uponReceiveShuffle, this::uponMsgFail);
+		registerMessageHandler(channelId, CyclonMessageMerge.MSG_ID, this::uponReceiveShuffleReply, this::uponMsgFail);
 
 		/*--------------------- Register Timer Handlers ----------------------------- */
-		registerTimerHandler(CyclonSampleTimer.TIMER_ID, this::uponSampleTimer);
+		registerTimerHandler(CyclonSampleTimer.TIMER_ID, this::uponShuffle);
 		registerTimerHandler(CyclonInfoTimer.TIMER_ID, this::uponInfoTime);
 
 		/*-------------------- Register Channel Events ------------------------------- */
-		// ADICIONAR -> UponGetNeighbors, UponShuffle, uponReceive(request),
-		// uponReceive(receive), Procedure->mergeView
 
 		registerChannelEventHandler(channelId, OutConnectionDown.EVENT_ID, this::uponOutConnectionDown);
 		registerChannelEventHandler(channelId, OutConnectionFailed.EVENT_ID, this::uponOutConnectionFailed);
@@ -129,7 +128,7 @@ public class Cyclon extends GenericProtocol {
 				String[] hostElems = contact.split(":");
 				Host contactHost = new Host(InetAddress.getByName(hostElems[0]), Short.parseShort(hostElems[1]));
 				// We add to the pending set until the connection is successful
-				pending.put(contactHost, 0);
+				membership.put(contactHost, 0);
 				openConnection(contactHost);
 			} catch (Exception e) {
 				logger.error("Invalid contact on configuration: '" + props.getProperty("contacts"));
@@ -149,13 +148,13 @@ public class Cyclon extends GenericProtocol {
 			setupPeriodicTimer(new CyclonInfoTimer(), pMetricsInterval, pMetricsInterval);
 	}
 
-	private void uponGetNeighbors() {
+	private void uponGetNeighbours() {
 		pview = membership;
 		// trigger neighbors(pview)
 		triggerNotification(new Neighbours(pview.keySet()));
 	}
 
-	private void uponShuffle() {
+	private void uponShuffle(CyclonSampleTimer timer, long timerId) {
 		Entry<Host, Integer> oldest = null; // oldest neigh -> p in the algorithm
 		for (Map.Entry<Host, Integer> entry : membership.entrySet()) {
 			int newAge = entry.getValue() + 1;
@@ -169,7 +168,20 @@ public class Cyclon extends GenericProtocol {
 
 		sampleHosts.put(self, 0);
 		// triggerSend ShuffleRequest, oldest, sampleHost
-		sendMessage(msg, oldest, sampleHosts);
+		sendMessage(new CyclonMessage(sampleHosts), oldest.getKey());
+	}
+
+	private void uponReceiveShuffle(CyclonMessage msg, Host from, short sourceProto, int channelId) {
+		Map<Host, Integer> tmpSample = getRandomSubset(membership, membership.size());
+		// temporarySample
+		Map<Host, Integer> samplePeers = msg.getSample();
+		// Trigger Send (ShuffleReply, s, temporarySample);
+		sendMessage(new CyclonMessageMerge(tmpSample), from);
+		mergeView(samplePeers, tmpSample);
+	}
+
+	private void uponReceiveShuffleReply(CyclonMessageMerge msg, Host from, short sourceProto, int channelId) {
+		mergeView(msg.getSample(), sampleHosts);
 	}
 
 	private void mergeView(Map<Host, Integer> samplePeers, Map<Host, Integer> mySample) {
@@ -198,34 +210,6 @@ public class Cyclon extends GenericProtocol {
 	}
 
 	/*--------------------------------- Messages ---------------------------------------- */
-	private void uponReceiveRequest(ProtoMessage shuffleRequest, Host subscriber, Map<Host, Integer> samplePeers) {
-		Map<Host, Integer> tmpSample = getRandomSubset(samplePeers, samplePeers.size());
-		// Trigger Send (ShuffleReply, s, temporarySample);
-		sendMessage(shuffleRequest, self, samplePeers.keySet());
-		mergeView(samplePeers, tmpSample);
-	}
-
-	private void uponReceiveReply(BroadcastRequest shuffleReply, Host subscriber, Map<Host, Integer> samplePeers) {
-		// Trigger Send (ShuffleReply, s, temporarySample);
-		mergeView(samplePeers, samplePeers);
-	}
-
-	// Received a sample from a peer.
-	// We add all the unknown peers to the "pending"
-	private void uponSample(CyclonMessage msg, Host from, short sourceProto, int channelId) {
-		// map and attempt to establish a connection.
-		// If the connection is successful, we add the peer to the
-		// membership (in theconnectionUp callback)
-		logger.debug("Received {} from {}", msg, from);
-		for (Host h : msg.getSample()) {
-			if (!h.equals(self) && !membership.containsKey(h) && !pending.containsKey(h)) {
-				pending.put(h, 0);
-				// Every channel operation is asynchronous! The result is returned in the form
-				// of channel events
-				openConnection(h);
-			}
-		}
-	}
 
 	private void uponMsgFail(ProtoMessage msg, Host host, short destProto, Throwable throwable, int channelId) {
 		// If a message fails to be sent, for whatever reason, log the message and the
@@ -235,19 +219,17 @@ public class Cyclon extends GenericProtocol {
 
 	/*--------------------------------- Timers ---------------------------------------- */
 
-	private void uponSampleTimer(CyclonSampleTimer timer, long timerId) {
-		// When theSampleTimer is triggered, get a random peer in the membership and
-		// send a sample
-		logger.debug("Sample Time: membership{}", membership);
-		if (membership.size() > 0) {
-			Host target = getRandom(membership.keySet());
-			Set<Host> subset = getRandomSubsetExcluding(membership, subsetSize, target).keySet();
-			subset.add(self);
-			sendMessage(new CyclonMessage(subset), target);
-			logger.debug("Sent SampleMessage {}", target);
-		}
-	}
-
+	/*
+	 * 
+	 * private void uponSampleTimer(CyclonSampleTimer timer, long timerId) { // When
+	 * theSampleTimer is triggered, get a random peer in the membership and // send
+	 * a sample logger.debug("Sample Time: membership{}", membership); if
+	 * (membership.size() > 0) { Host target = getRandom(membership.keySet());
+	 * Set<Host> subset = getRandomSubsetExcluding(membership, subsetSize,
+	 * target).keySet(); subset.add(self); sendMessage(new CyclonMessage(subset),
+	 * target); logger.debug("Sent SampleMessage {}", target); } }
+	 * 
+	 */
 	// Gets a random element from the set of peers
 	private Host getRandom(Set<Host> hostSet) {
 		int idx = rnd.nextInt(hostSet.size());

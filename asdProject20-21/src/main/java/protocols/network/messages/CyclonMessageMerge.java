@@ -9,13 +9,13 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-public class CyclonMessage extends ProtoMessage {
+public class CyclonMessageMerge extends ProtoMessage {
 
-    public final static short MSG_ID = 101;
+    public final static short MSG_ID = 102;
 
     private final Map<Host, Integer> sample;
 
-    public CyclonMessage(Map<Host, Integer> sample) {
+    public CyclonMessageMerge(Map<Host, Integer> sample) {
         super(MSG_ID);
         this.sample = sample;
     }
@@ -31,21 +31,21 @@ public class CyclonMessage extends ProtoMessage {
                 '}';
     }
 
-    public static ISerializer<CyclonMessage> serializer = new ISerializer<CyclonMessage>() {
+    public static ISerializer<CyclonMessageMerge> serializer = new ISerializer<CyclonMessageMerge>() {
         @Override
-        public void serialize(CyclonMessage sampleMessage, ByteBuf out) throws IOException {
+        public void serialize(CyclonMessageMerge sampleMessage, ByteBuf out) throws IOException {
             out.writeInt(sampleMessage.sample.size());
             for (Host h : sampleMessage.sample.keySet())
                 Host.serializer.serialize(h, out);
         }
 
         @Override
-        public CyclonMessage deserialize(ByteBuf in) throws IOException {
+        public CyclonMessageMerge deserialize(ByteBuf in) throws IOException {
             int size = in.readInt();
             Map<Host, Integer> subset = new HashMap<>(size, 1);
             for (int i = 0; i < size; i++)
                 subset.put(Host.serializer.deserialize(in), 0); // NAO DEVE SER 0 ?!!??!
-            return new CyclonMessage(subset);
+            return new CyclonMessageMerge(subset);
         }
     };
 }
