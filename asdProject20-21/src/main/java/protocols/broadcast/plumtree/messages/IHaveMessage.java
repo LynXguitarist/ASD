@@ -4,13 +4,14 @@ import babel.generic.ProtoMessage;
 import io.netty.buffer.ByteBuf;
 import network.ISerializer;
 import network.data.Host;
+import utils.MessageIds;
 
 import java.io.IOException;
 import java.util.UUID;
 
 
 public class IHaveMessage extends ProtoMessage  {
-    public static final short MSG_ID = 203;
+    public static final short MSG_ID = MessageIds.I_HAVE_MESSAGE.getId();
 
     private final UUID mid;
     private final Host sender;

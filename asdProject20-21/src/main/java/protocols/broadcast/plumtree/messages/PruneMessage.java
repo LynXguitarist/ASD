@@ -4,12 +4,13 @@ import babel.generic.ProtoMessage;
 import io.netty.buffer.ByteBuf;
 import network.ISerializer;
 import network.data.Host;
+import utils.MessageIds;
 
 import java.io.IOException;
 import java.util.UUID;
 
 public class PruneMessage extends ProtoMessage {
-    public static final short MSG_ID = 204;
+    public static final short MSG_ID = MessageIds.PRUNE_MESSAGE.getId();
 
     private final UUID mid;
     private final Host sender;

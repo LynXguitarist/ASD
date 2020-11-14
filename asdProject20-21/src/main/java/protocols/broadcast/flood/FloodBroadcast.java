@@ -12,6 +12,7 @@ import protocols.broadcast.flood.messages.FloodMessage;
 import protocols.membership.common.notifications.ChannelCreated;
 import protocols.membership.common.notifications.NeighbourDown;
 import protocols.membership.common.notifications.NeighbourUp;
+import utils.ProtocolsIds;
 
 import java.io.IOException;
 import java.util.HashSet;
@@ -24,7 +25,7 @@ public class FloodBroadcast extends GenericProtocol {
 
     //Protocol information, to register in babel
     public static final String PROTOCOL_NAME = "Flood";
-    public static final short PROTOCOL_ID = 200;
+    public static final short PROTOCOL_ID = ProtocolsIds.FLOOD.getId();
 
     private final Host myself; //My own address/port
     private final Set<Host> neighbours; //My known neighbours (a.k.a peers the membership protocol told me about)

@@ -11,6 +11,7 @@ import protocols.broadcast.common.DeliverNotification;
 import protocols.membership.common.notifications.ChannelCreated;
 import protocols.membership.common.notifications.NeighbourDown;
 import protocols.membership.common.notifications.NeighbourUp;
+import utils.ProtocolsIds;
 import protocols.broadcast.eagerPushGossip.messages.EPGMessage;
 
 import java.io.IOException;
@@ -21,7 +22,7 @@ public class EagerPushGossip extends GenericProtocol {
 
 	// Protocol information, to register in babel
 	public static final String PROTOCOL_NAME = "EagerPushGossip";
-	public static final short PROTOCOL_ID = 201;
+	public static final short PROTOCOL_ID = ProtocolsIds.EARGER_PUSH_GOSSIP.getId();
 
 	private final Host myself; // My own address/port
 	private final Set<Host> neighbours; // My known neighbours (a.k.a peers the membership protocol told me about)

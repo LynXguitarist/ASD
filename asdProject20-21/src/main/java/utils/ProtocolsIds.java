@@ -1,15 +1,16 @@
 package utils;
 
 public enum ProtocolsIds {
-	EARGER_PUSH_GOSSIP(200), PLUMTREE(201), FLOOD(202), CYCLON(300), SIMPLE_FULL_MEMBERSHIP(301);
+	EARGER_PUSH_GOSSIP((short) 200), PLUMTREE((short) 201), FLOOD((short) 202), 
+		CYCLON((short) 300), SIMPLE_FULL_MEMBERSHIP((short) 301);
 
-	private int id;
+	private short id;
 
-	ProtocolsIds(int id) {
+	ProtocolsIds(short id) {
 		this.id = id;
 	}
 
-	public int getId() {
+	public short getId() {
 		return id;
 	}
 

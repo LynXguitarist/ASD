@@ -35,6 +35,7 @@ import protocols.network.messages.CyclonMessage;
 import protocols.network.messages.CyclonMessageMerge;
 import protocols.network.timers.CyclonInfoTimer;
 import protocols.network.timers.CyclonSampleTimer;
+import utils.ProtocolsIds;
 
 public class Cyclon extends GenericProtocol {
 
@@ -42,7 +43,7 @@ public class Cyclon extends GenericProtocol {
 	private static final int CACHE_SIZE = 50; // cache size -> fixed-sized cache of c entries
 
 	// Protocol information, to register in babel
-	public final static short PROTOCOL_ID = 101;
+	public final static short PROTOCOL_ID = ProtocolsIds.CYCLON.getId();
 	public final static String PROTOCOL_NAME = "Cyclon";
 
 	private final Host self; // My own address/port
@@ -231,17 +232,6 @@ public class Cyclon extends GenericProtocol {
 
 	/*--------------------------------- Timers ---------------------------------------- */
 
-	/*
-	 * 
-	 * private void uponSampleTimer(CyclonSampleTimer timer, long timerId) { // When
-	 * theSampleTimer is triggered, get a random peer in the membership and // send
-	 * a sample logger.debug("Sample Time: membership{}", membership); if
-	 * (membership.size() > 0) { Host target = getRandom(membership.keySet());
-	 * Set<Host> subset = getRandomSubsetExcluding(membership, subsetSize,
-	 * target).keySet(); subset.add(self); sendMessage(new CyclonMessage(subset),
-	 * target); logger.debug("Sent SampleMessage {}", target); } }
-	 * 
-	 */
 	// Gets a random element from the set of peers
 	private Host getRandom(Set<Host> hostSet) {
 		int idx = rnd.nextInt(hostSet.size());

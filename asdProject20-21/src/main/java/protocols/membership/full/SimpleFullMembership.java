@@ -14,6 +14,7 @@ import protocols.membership.common.notifications.NeighbourUp;
 import protocols.membership.full.messages.SampleMessage;
 import protocols.membership.full.timers.InfoTimer;
 import protocols.membership.full.timers.SampleTimer;
+import utils.ProtocolsIds;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -24,7 +25,7 @@ public class SimpleFullMembership extends GenericProtocol {
     private static final Logger logger = LogManager.getLogger(SimpleFullMembership.class);
 
     //Protocol information, to register in babel
-    public final static short PROTOCOL_ID = 100;
+    public final static short PROTOCOL_ID = ProtocolsIds.SIMPLE_FULL_MEMBERSHIP.getId();
     public final static String PROTOCOL_NAME = "FullMembership";
 
     private final Host self;     //My own address/port

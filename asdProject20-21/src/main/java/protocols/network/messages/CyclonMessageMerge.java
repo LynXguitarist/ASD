@@ -4,6 +4,7 @@ import babel.generic.ProtoMessage;
 import io.netty.buffer.ByteBuf;
 import network.ISerializer;
 import network.data.Host;
+import utils.MessageIds;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -11,7 +12,7 @@ import java.util.Map;
 
 public class CyclonMessageMerge extends ProtoMessage {
 
-    public final static short MSG_ID = 103;
+    public final static short MSG_ID = MessageIds.CYCLON_MESSAGE_MERGE.getId();
 
     private final Map<Host, Integer> sample;
 

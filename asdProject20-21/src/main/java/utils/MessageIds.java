@@ -1,16 +1,17 @@
 package utils;
 
 public enum MessageIds {
-	CYCLON_MESSAGE(101), CYCLON_MESSAGE_MERGE(102), SAMPLE_MESSAGE(103), I_HAVE_MESSAGE(104), 
-		PRUNE_MESSAGE(105), FLOOD_MESSAGE(106), EPG_MESSAGE(107);
+	CYCLON_MESSAGE((short) 101), CYCLON_MESSAGE_MERGE((short) 102), SAMPLE_MESSAGE((short) 103), 
+		I_HAVE_MESSAGE((short) 104), PRUNE_MESSAGE((short) 105), FLOOD_MESSAGE((short) 106), 
+			EPG_MESSAGE((short) 107);
 
-	private int id;
+	private short id;
 
-	MessageIds(int id) {
+	MessageIds(short id) {
 		this.id = id;
 	}
 
-	public int getId() {
+	public short getId() {
 		return id;
 	}
 

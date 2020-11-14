@@ -4,6 +4,7 @@ import babel.generic.ProtoMessage;
 import io.netty.buffer.ByteBuf;
 import network.ISerializer;
 import network.data.Host;
+import utils.MessageIds;
 
 import java.io.IOException;
 import java.util.HashSet;
@@ -11,7 +12,7 @@ import java.util.Set;
 
 public class SampleMessage extends ProtoMessage {
 
-    public final static short MSG_ID = 101;
+    public final static short MSG_ID = MessageIds.SAMPLE_MESSAGE.getId();
 
     private final Set<Host> sample;
 
