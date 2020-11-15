@@ -9,10 +9,13 @@ import org.apache.logging.log4j.Logger;
 import protocols.broadcast.common.BroadcastRequest;
 import protocols.broadcast.common.DeliverNotification;
 import protocols.broadcast.flood.messages.FloodMessage;
+import protocols.broadcast.plumtree.messages.GraftMessage;
+import protocols.broadcast.plumtree.messages.IHaveMessage;
 import protocols.broadcast.plumtree.messages.PruneMessage;
 import protocols.membership.common.notifications.ChannelCreated;
 import protocols.membership.common.notifications.NeighbourDown;
 import protocols.membership.common.notifications.NeighbourUp;
+import protocols.membership.full.timers.Timer;
 import utils.ProtocolsIds;
 
 import java.io.IOException;
@@ -24,18 +27,21 @@ public class PlumTree extends GenericProtocol {
 
     //Protocol information, to register in babel
     public static final String PROTOCOL_NAME = "PlumTree";
-    public static final short PROTOCOL_ID = ProtocolsIds.PLUMTREE.getId();
+    public static final short PROTOCOL_ID = ProtocolsIds.PLUMTREE.getId();;
 
     private final Host myself; //My own address/port
     private final Set<Host> neighbours; //My known neighbours (a.k.a peers the membership protocol told me about)
-    private final Set<UUID> received; //Set of received messages (since we do not want to deliver the same msg twice)
+    private final Map<UUID,byte[] > received; //Set of received messages (since we do not want to deliver the same msg twice)
 
     private final Set<Host> eagerPushPeers;
     private final Set<Host> lazyPushPeers;
-    //IHAVEMESSAGES
-    //private final lazyQueue;
 
+    private final Set<IHaveMessage> lazyQueue;
+    private final Set<Missing> missing;
 
+    private final Set<Timer> timers;
+
+    private final int lostMessageTimeOut; //param: timeout for samples
 
     //We can only start sending messages after the membership protocol informed us that the channel is ready
     private boolean channelReady;
@@ -44,10 +50,16 @@ public class PlumTree extends GenericProtocol {
         super(PROTOCOL_NAME, PROTOCOL_ID);
         this.myself = myself;
         neighbours = new HashSet<>();
-        received = new HashSet<>();
+        received = new HashMap<>();
 
         eagerPushPeers = new HashSet<>();
         lazyPushPeers = new HashSet<>();
+
+        lazyQueue = new HashSet<>();
+        missing = new HashSet<>();
+
+        this.timers = new HashSet<>();
+        this.lostMessageTimeOut = Integer.parseInt(properties.getProperty("lostMessageTimeOut", "2000")); //2 seconds
 
         channelReady = false;
 
@@ -59,8 +71,25 @@ public class PlumTree extends GenericProtocol {
         subscribeNotification(NeighbourDown.NOTIFICATION_ID, this::uponNeighbourDown);
         subscribeNotification(ChannelCreated.NOTIFICATION_ID, this::uponChannelCreated);
 
+        timers.forEach(timer -> {
+            try {
+                registerTimerHandler(timer.getId(), this::uponTimer);
+            } catch (HandlerRegistrationException e) {
+                e.printStackTrace();
+            }
+        });
+    }
 
-
+    private void uponTimer(Timer timer, long timerId) {
+        setupTimer(timer, lostMessageTimeOut );
+        timers.add(timer);
+        missing.forEach(missingElem->{
+            if(missingElem.getId()==timer.getId()){
+               eagerPushPeers.add(missingElem.getSender());
+               lazyPushPeers.remove(missingElem.getSender());
+               sendMessage(new GraftMessage(missingElem.getMid(),myself), missingElem.getSender());
+            }
+        });
     }
 
     @Override
@@ -74,7 +103,13 @@ public class PlumTree extends GenericProtocol {
         registerSharedChannel(cId);
         /*---------------------- Register Message Serializers ---------------------- */
         registerMessageSerializer(cId, FloodMessage.MSG_ID, FloodMessage.serializer);
+        registerMessageSerializer(cId, PruneMessage.MSG_ID, PruneMessage.serializer);
+        registerMessageSerializer(cId, IHaveMessage.MSG_ID, IHaveMessage.serializer);
+        registerMessageSerializer(cId, GraftMessage.MSG_ID, GraftMessage.serializer);
+
         /*---------------------- Register Message Handlers -------------------------- */
+
+        //Handler for FloodMessage
         try {
             registerMessageHandler(cId, FloodMessage.MSG_ID, this::uponBroadcastMessage, this::uponMsgFail);
         } catch (HandlerRegistrationException e) {
@@ -83,24 +118,66 @@ public class PlumTree extends GenericProtocol {
             System.exit(1);
         }
 
+        //Handler for PruneMessage
         try {
-            registerMessageHandler(cId, PruneMessage.MSG_ID, this::uponPronMessage, this::uponMsgFail);
+            registerMessageHandler(cId, PruneMessage.MSG_ID, this::uponPruneMessage, this::uponMsgFail);
         } catch (HandlerRegistrationException e) {
             logger.error("Error registering message handler: " + e.getMessage());
             e.printStackTrace();
             System.exit(1);
         }
 
+        //Handler for IHaveMessage
+        try {
+            registerMessageHandler(cId, IHaveMessage.MSG_ID, this::uponIHaveMessage, this::uponMsgFail);
+        } catch (HandlerRegistrationException e) {
+            logger.error("Error registering message handler: " + e.getMessage());
+            e.printStackTrace();
+            System.exit(1);
+        }
+
+        //Handler for GraftMessage
+        try {
+            registerMessageHandler(cId, GraftMessage.MSG_ID, this::uponGraftMessage, this::uponMsgFail);
+        } catch (HandlerRegistrationException e) {
+            logger.error("Error registering message handler: " + e.getMessage());
+            e.printStackTrace();
+            System.exit(1);
+        }
 
         //Now we can start sending messages
         channelReady = true;
     }
 
-    private void uponPronMessage(ProtoMessage msg, Host from, short sourceProto, int channelId) {
+    private void uponGraftMessage(GraftMessage graftMessage, Host from, short sourceProto, int channelId) {
+        eagerPushPeers.add(graftMessage.getSender());
+        lazyPushPeers.remove(graftMessage.getSender());
 
-        eagerPushPeers.remove(from);
-        lazyPushPeers.remove(from);
+        if(received.containsKey(graftMessage.getMid())){
 
+            logger.info("FLOODMESSAGE__GRAFT");
+            sendMessage(new FloodMessage(graftMessage.getMid(), myself, sourceProto, received.get(graftMessage.getMid())), graftMessage.getSender());
+
+        }
+
+    }
+
+    private void uponIHaveMessage(IHaveMessage iHaveMessage, Host from, short sourceProto, int channelId) {
+
+        if (!received.containsKey(iHaveMessage.getMid())){
+            if(!timers.contains(new Timer(iHaveMessage.getId()))){
+                Timer t = new Timer(iHaveMessage.getId());
+                setupTimer(t, lostMessageTimeOut );
+                timers.add(t);
+            }
+
+            missing.add(new Missing(iHaveMessage.getMid(),iHaveMessage.getSender(), iHaveMessage.getId()));
+        }
+    }
+
+    private void uponPruneMessage(PruneMessage msg, Host from, short sourceProto, int channelId) {
+        eagerPushPeers.remove(msg.getSender());
+        lazyPushPeers.add(msg.getSender());
     }
 
     /*--------------------------------- Requests ---------------------------------------- */
@@ -108,6 +185,7 @@ public class PlumTree extends GenericProtocol {
         if (!channelReady) return;
 
         //Create the message object.
+        logger.info("FLOODMESSAGE__BROADCAST");
         FloodMessage msg = new FloodMessage(request.getMsgId(), request.getSender(), sourceProto, request.getMsg());
 
         //Call the same handler as when receiving a new FloodMessage (since the logic is the same)
@@ -118,36 +196,59 @@ public class PlumTree extends GenericProtocol {
     private void uponBroadcastMessage(FloodMessage msg, Host from, short sourceProto, int channelId) {
         logger.trace("Received {} from {}", msg, from);
 
+        logger.info("*****MID****** :"+  msg.getMid());
+        logger.info("*****FROM****** :"+  from);
+
         //If we already received it once, do nothing (or we would end up with a nasty infinite loop)
-        if (received.add(msg.getMid())) {
+        if (!received.containsKey(msg.getMid())) {
+            logger.info("******PRIMEIRA_VEZ******");
+            received.put(msg.getMid(),msg.getContent());
             //Deliver the message to the application (even if it came from it)
             triggerNotification(new DeliverNotification(msg.getMid(), msg.getSender(), msg.getContent()));
 
-            eagerPush(msg, myself); //falta adicionar o round
-            lazyPush(msg, myself); //falta adicionar o round
 
-            eagerPushPeers.add(from);
-            lazyPushPeers.remove(from);
+           if( missing.contains(new Missing(msg.getMid(), msg.getSender(), msg.getId()))){
+               timers.forEach(timer -> {
+                   if(timer.getId() == msg.getId()){
+                       cancelTimer(msg.getId());
+                   }
+               });
+           }
+
+            eagerPush(msg, myself);
+            lazyPush(msg, myself);
+
+            eagerPushPeers.add(msg.getSender());
+            lazyPushPeers.remove(msg.getSender());
         } else {
-            eagerPushPeers.remove(from);
-            lazyPushPeers.add(from);
-            sendMessage(new PruneMessage(UUID.randomUUID(),myself,from),myself);
-        } // ta certo o construtor da classe pruneMessage?
+            logger.info("******SEGUNDA_VEZ******");
+            eagerPushPeers.remove(msg.getSender());
+            lazyPushPeers.add(msg.getSender());
+
+            if(!myself.equals(msg.getSender())){
+                sendMessage(new PruneMessage(UUID.randomUUID(),myself),msg.getSender());
+            }
+
+        }
     }
 
     private void eagerPush(FloodMessage msg, Host myself){
         eagerPushPeers.forEach(host->{
             if (!host.equals(myself)) {
                 logger.trace("Sent {} to {}", msg, host);
-                sendMessage(msg, host);
+                logger.info("*****EAGER_PUSH****** :");
+                sendMessage(new FloodMessage(msg.getMid(), myself, msg.getToDeliver(), msg.getContent()), host);
             }
         });
     }
 
     private void lazyPush(FloodMessage msg, Host myself){
         lazyPushPeers.forEach(host->{
-            //lazyQueue.add()
+            if(!host.equals(myself)) {
+                lazyQueue.add(new IHaveMessage(msg.getMid(), host, msg.getContent()));
+            }
         });
+        dispatch();
     }
 
     private void uponMsgFail(ProtoMessage msg, Host host, short destProto,
@@ -175,6 +276,20 @@ public class PlumTree extends GenericProtocol {
             eagerPushPeers.remove(h);
             lazyPushPeers.remove(h);
 
+            missing.forEach(missingMessage->{
+                if(missingMessage.getSender().equals(h)){
+                    missing.remove(missingMessage);
+                }
+            });
         }
     }
+
+    private void dispatch(){
+        lazyQueue.forEach(message->{
+            sendMessage(message,message.getSender());
+        });
+        lazyQueue.clear();
+    }
+
+
 }

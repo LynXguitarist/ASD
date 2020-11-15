@@ -15,10 +15,6 @@ public class IHaveMessage extends ProtoMessage  {
 
     private final UUID mid;
     private final Host sender;
-    private final Host myself;
-
-    private final int round;
-
     private final byte[] content;
 
     @Override
@@ -28,14 +24,11 @@ public class IHaveMessage extends ProtoMessage  {
                 '}';
     }
 
-    public IHaveMessage(UUID mid, Host sender, Host myself, int round, byte[] content) {
+    public IHaveMessage(UUID mid, Host sender, byte[] content) {
         super(MSG_ID);
         this.mid = mid;
         this.sender = sender;
-        this.myself = myself;
-        this.round = round;
         this.content = content;
-
     }
 
 
@@ -45,10 +38,6 @@ public class IHaveMessage extends ProtoMessage  {
 
     public UUID getMid() {
         return mid;
-    }
-
-    public Host getMyself() {
-        return myself;
     }
 
     public byte[] getContent() {
@@ -63,8 +52,6 @@ public class IHaveMessage extends ProtoMessage  {
             out.writeLong(iHaveMessage.mid.getMostSignificantBits());
             out.writeLong(iHaveMessage.mid.getLeastSignificantBits());
             Host.serializer.serialize(iHaveMessage.sender, out);
-            Host.serializer.serialize(iHaveMessage.myself, out);
-            out.writeInt(iHaveMessage.round);
             out.writeInt(iHaveMessage.content.length);
             if (iHaveMessage.content.length > 0) {
                 out.writeBytes(iHaveMessage.content);
@@ -77,14 +64,12 @@ public class IHaveMessage extends ProtoMessage  {
             long secondLong = in.readLong();
             UUID mid = new UUID(firstLong, secondLong);
             Host sender = Host.serializer.deserialize(in);
-            Host myself = Host.serializer.deserialize(in);
-            int round = in.readInt();
             int size = in.readInt();
             byte[] content = new byte[size];
             if (size > 0)
                 in.readBytes(content);
 
-            return new IHaveMessage(mid, sender, myself, round, content);
+            return new IHaveMessage(mid, sender, content);
         }
 
     };
