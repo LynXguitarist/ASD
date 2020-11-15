@@ -1,3 +1,0 @@
-Fred - 
-	Broadcast Protocol: Eager Push Gossip e depois Plumtree
-	Network Protocol: Cyclon e depois HyParView

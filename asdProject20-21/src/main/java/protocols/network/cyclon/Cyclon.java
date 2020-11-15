@@ -252,18 +252,6 @@ public class Cyclon extends GenericProtocol {
 		return null;
 	}
 
-	// Gets a random subset from the set of peers, excluding one
-	private static Map<Host, Integer> getRandomSubsetExcluding(Map<Host, Integer> hostMap, int sampleSize,
-			Host exclude) {
-		List<Host> keys = new ArrayList<>(hostMap.keySet());
-		keys.remove(exclude);
-		Collections.shuffle(keys);
-
-		Map<Host, Integer> shuffleMap = new LinkedHashMap<>(Math.min(sampleSize, keys.size()));
-		keys.forEach(k -> shuffleMap.put(k, hostMap.get(k)));
-		return shuffleMap;
-	}
-
 	// Gets a random subset from the set of peers
 	private static Map<Host, Integer> getRandomSubset(Map<Host, Integer> hostMap, int sampleSize) {
 		List<Host> keys = new ArrayList<>(hostMap.keySet());
