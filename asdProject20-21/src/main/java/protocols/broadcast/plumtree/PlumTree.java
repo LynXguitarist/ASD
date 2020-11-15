@@ -71,20 +71,13 @@ public class PlumTree extends GenericProtocol {
         subscribeNotification(NeighbourDown.NOTIFICATION_ID, this::uponNeighbourDown);
         subscribeNotification(ChannelCreated.NOTIFICATION_ID, this::uponChannelCreated);
 
-        timers.forEach(timer -> {
-            try {
-                registerTimerHandler(timer.getId(), this::uponTimer);
-            } catch (HandlerRegistrationException e) {
-                e.printStackTrace();
-            }
-        });
     }
 
     private void uponTimer(Timer timer, long timerId) {
         setupTimer(timer, lostMessageTimeOut );
         timers.add(timer);
         missing.forEach(missingElem->{
-            if(missingElem.getId()==timer.getId()){
+            if(missingElem.getId()==timer.getTimerId()){
                eagerPushPeers.add(missingElem.getSender());
                lazyPushPeers.remove(missingElem.getSender());
                sendMessage(new GraftMessage(missingElem.getMid(),myself), missingElem.getSender());
@@ -145,6 +138,14 @@ public class PlumTree extends GenericProtocol {
             System.exit(1);
         }
 
+
+        try {
+            registerTimerHandler(Timer.TIMER_ID, this::uponTimer);
+        } catch (HandlerRegistrationException e) {
+            e.printStackTrace();
+        }
+
+
         //Now we can start sending messages
         channelReady = true;
     }
@@ -154,20 +155,19 @@ public class PlumTree extends GenericProtocol {
         lazyPushPeers.remove(graftMessage.getSender());
 
         if(received.containsKey(graftMessage.getMid())){
-
-            logger.info("FLOODMESSAGE__GRAFT");
+            //logger.info("FLOODMESSAGE__GRAFT");
             sendMessage(new FloodMessage(graftMessage.getMid(), myself, sourceProto, received.get(graftMessage.getMid())), graftMessage.getSender());
-
         }
 
     }
 
-    private void uponIHaveMessage(IHaveMessage iHaveMessage, Host from, short sourceProto, int channelId) {
+    private void uponIHaveMessage(IHaveMessage iHaveMessage, Host from, short sourceProto, int channelId)  {
 
         if (!received.containsKey(iHaveMessage.getMid())){
             if(!timers.contains(new Timer(iHaveMessage.getId()))){
                 Timer t = new Timer(iHaveMessage.getId());
                 setupTimer(t, lostMessageTimeOut );
+
                 timers.add(t);
             }
 
@@ -185,7 +185,7 @@ public class PlumTree extends GenericProtocol {
         if (!channelReady) return;
 
         //Create the message object.
-        logger.info("FLOODMESSAGE__BROADCAST");
+        //logger.info("FLOODMESSAGE__BROADCAST");
         FloodMessage msg = new FloodMessage(request.getMsgId(), request.getSender(), sourceProto, request.getMsg());
 
         //Call the same handler as when receiving a new FloodMessage (since the logic is the same)
@@ -196,20 +196,21 @@ public class PlumTree extends GenericProtocol {
     private void uponBroadcastMessage(FloodMessage msg, Host from, short sourceProto, int channelId) {
         logger.trace("Received {} from {}", msg, from);
 
-        logger.info("*****MID****** :"+  msg.getMid());
-        logger.info("*****FROM****** :"+  from);
+       // logger.info("*****MID****** :"+  msg.getMid());
+      //  logger.info("*****FROM****** :"+  from);
+
 
         //If we already received it once, do nothing (or we would end up with a nasty infinite loop)
         if (!received.containsKey(msg.getMid())) {
-            logger.info("******PRIMEIRA_VEZ******");
+           // logger.info("******PRIMEIRA_VEZ******");
             received.put(msg.getMid(),msg.getContent());
+
             //Deliver the message to the application (even if it came from it)
             triggerNotification(new DeliverNotification(msg.getMid(), msg.getSender(), msg.getContent()));
 
-
            if( missing.contains(new Missing(msg.getMid(), msg.getSender(), msg.getId()))){
                timers.forEach(timer -> {
-                   if(timer.getId() == msg.getId()){
+                   if(Short.compare(timer.getTimerId(),msg.getId())== 0){
                        cancelTimer(msg.getId());
                    }
                });
@@ -221,7 +222,7 @@ public class PlumTree extends GenericProtocol {
             eagerPushPeers.add(msg.getSender());
             lazyPushPeers.remove(msg.getSender());
         } else {
-            logger.info("******SEGUNDA_VEZ******");
+           // logger.info("******SEGUNDA_VEZ******");
             eagerPushPeers.remove(msg.getSender());
             lazyPushPeers.add(msg.getSender());
 
@@ -236,7 +237,7 @@ public class PlumTree extends GenericProtocol {
         eagerPushPeers.forEach(host->{
             if (!host.equals(myself)) {
                 logger.trace("Sent {} to {}", msg, host);
-                logger.info("*****EAGER_PUSH****** :");
+               // logger.info("*****EAGER_PUSH****** : " + host);
                 sendMessage(new FloodMessage(msg.getMid(), myself, msg.getToDeliver(), msg.getContent()), host);
             }
         });
@@ -245,10 +246,9 @@ public class PlumTree extends GenericProtocol {
     private void lazyPush(FloodMessage msg, Host myself){
         lazyPushPeers.forEach(host->{
             if(!host.equals(myself)) {
-                lazyQueue.add(new IHaveMessage(msg.getMid(), host, msg.getContent()));
+                sendMessage(new IHaveMessage(msg.getMid(), myself, msg.getContent()),host);
             }
         });
-        dispatch();
     }
 
     private void uponMsgFail(ProtoMessage msg, Host host, short destProto,
