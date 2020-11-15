@@ -1,4 +1,5 @@
 import babel.core.Babel;
+import babel.core.GenericProtocol;
 import babel.exceptions.HandlerRegistrationException;
 import babel.exceptions.ProtocolAlreadyExistsException;
 import network.data.Host;
@@ -60,9 +61,6 @@ public class Main {
 		// Broadcast Protocol
 		pickBroadcastProtocol(props.getProperty("broadcast_protocol"), props, myself);
 
-		// Membership Protocol
-		pickMembershipProtocol(props.getProperty("membership_protocol"), props, myself);
-
 		// Start babel and protocol threads
 		babel.start();
 
@@ -72,63 +70,56 @@ public class Main {
 	// Init the protocols. This should be done after creating all protocols, since
 	// there can be inter-protocol
 	// communications in this step.
-	private static void pickBroadcastProtocol(String config, Properties props, Host myself) {
+	private static void pickBroadcastProtocol(String config, Properties props, Host myself)
+			throws ProtocolAlreadyExistsException, HandlerRegistrationException, IOException {
+		GenericProtocol broadcast = null;
+		GenericProtocol broadcastApp = null;
 		try {
 			if (config.toUpperCase().equals(ProtocolsName.EARGER_PUSH_GOSSIP.getName())) { // EagerPushGossip
-				EagerPushGossip broadcast;
 				broadcast = new EagerPushGossip(props, myself);
-				BroadcastApp broadcastApp = new BroadcastApp(myself, props, ProtocolsIds.EARGER_PUSH_GOSSIP.getId());
-				broadcastApp.init(props);
-				broadcast.init(props);
-				// Register applications in babel
-				babel.registerProtocol(broadcastApp);
-				babel.registerProtocol(broadcast);
+				broadcastApp = new BroadcastApp(myself, props, ProtocolsIds.EARGER_PUSH_GOSSIP.getId());
 			} else if (config.toUpperCase().equals(ProtocolsName.PLUMTREE.getName())) { // PlumTree
-				PlumTree broadcast = new PlumTree(props, myself);
-				BroadcastApp broadcastApp = new BroadcastApp(myself, props, ProtocolsIds.PLUMTREE.getId());
-				broadcastApp.init(props);
-				broadcast.init(props);
-				// Register applications in babel
-				babel.registerProtocol(broadcastApp);
-				babel.registerProtocol(broadcast);
+				broadcast = new PlumTree(props, myself);
+				broadcastApp = new BroadcastApp(myself, props, ProtocolsIds.PLUMTREE.getId());
 			} else if (config.toUpperCase().equals(ProtocolsName.FLOOD.getName())) { // Flood
-				FloodBroadcast broadcast = new FloodBroadcast(props, myself);
-				BroadcastApp broadcastApp = new BroadcastApp(myself, props, ProtocolsIds.FLOOD.getId());
-				broadcastApp.init(props);
-				broadcast.init(props);
-				// Register applications in babel
-				babel.registerProtocol(broadcastApp);
-				babel.registerProtocol(broadcast);
+				broadcast = new FloodBroadcast(props, myself);
+				broadcastApp = new BroadcastApp(myself, props, ProtocolsIds.FLOOD.getId());
 			} else
 				throw new NullPointerException("Invalid Broadcast Protocol!");
-		} catch (IOException | HandlerRegistrationException | ProtocolAlreadyExistsException e) {
+		} catch (IOException | HandlerRegistrationException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		GenericProtocol membership = pickMembershipProtocol(props.getProperty("membership_protocol"), props, myself);
+		// Register applications in babel
+		babel.registerProtocol(broadcastApp);
+		babel.registerProtocol(broadcast);
+		babel.registerProtocol(membership);
 
+		broadcastApp.init(props);
+		broadcast.init(props);
+		membership.init(props);
 	}
 
 	// Init the protocols. This should be done after creating all protocols, since
 	// there can be inter-protocol
 	// communications in this step.
-	private static void pickMembershipProtocol(String config, Properties props, Host myself) {
+	private static GenericProtocol pickMembershipProtocol(String config, Properties props, Host myself) {
+		GenericProtocol membership = null;
 		try {
 			if (config.toUpperCase().equals(ProtocolsName.CYCLON.getName())) { // Cyclon
-				Cyclon membership = new Cyclon(props, myself);
-				membership.init(props);
-				// Register applications in babel
-				babel.registerProtocol(membership);
+				membership = new Cyclon(props, myself);
+				return membership;
 			} else if (config.toUpperCase().equals(ProtocolsName.SIMPLE_FULL_MEMBERSHIP.getName())) { // SimpleFullMembership
-				SimpleFullMembership membership = new SimpleFullMembership(props, myself);
-				membership.init(props);
-				// Register applications in babel
-				babel.registerProtocol(membership);
+				membership = new SimpleFullMembership(props, myself);
+				return membership;
 			} else
 				throw new NullPointerException("Invalid Membership Protocol!");
-		} catch (IOException | HandlerRegistrationException | ProtocolAlreadyExistsException e) {
+		} catch (IOException | HandlerRegistrationException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		return null;
 	}
 
 }
