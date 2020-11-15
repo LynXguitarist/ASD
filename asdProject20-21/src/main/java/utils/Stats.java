@@ -2,13 +2,14 @@ package utils;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 public class Stats {
 
 	// Key -> UUID Value -> time of creation(ms)
-	private static Map<Long, Long> msgCreated = new HashMap<>();
+	private static Map<UUID, Long> msgCreated = new HashMap<>();
 	// Key -> UUID Value -> time of the last receive of the msg(ms)
-	private static Map<Long, Long> msgSent = new HashMap<>();
+	private static Map<UUID, Long> msgSent = new HashMap<>();
 	private static long sum = 0;
 
 	/**
@@ -16,8 +17,10 @@ public class Stats {
 	 * 
 	 * @param UUID
 	 */
-	public static void addMsgCreated(long UUID) {
-		msgCreated.put(UUID, System.currentTimeMillis());
+	public static void addMsgCreated(UUID id) {
+		long currentTime = System.currentTimeMillis();
+		msgCreated.put(id, currentTime);
+		msgSent.put(id, currentTime);
 	}
 
 	/**
@@ -25,8 +28,31 @@ public class Stats {
 	 * 
 	 * @param UUID
 	 */
-	public static void addOrUpdateMsgSent(long UUID) {
-		msgSent.put(UUID, System.currentTimeMillis());
+	public static void addOrUpdateMsgSent(UUID id) {
+		msgSent.put(id, System.currentTimeMillis());
+	}
+
+	public static String printStats() {
+		String avgBroadcastRel = "Average Broadcast reliability: " + msgCreated.size() / msgSent.size();
+		String avgBroadcastLat = "\nAverage Broadcast latency:(ms) " + averageBroadcastLatency();
+		String totMsgTrans = "\nTotal Messages/Bytes Transmitted: " + msgCreated.size();
+		String totMsgRec = "\nTotal Messages/Bytes Received: " + msgSent.size();
+		String stats = avgBroadcastRel + avgBroadcastLat + totMsgTrans + totMsgRec;
+		return stats;
+	}
+
+	/*--------------------------------------------Private_Methods------------------------------------------*/
+
+	/**
+	 * Gets the Average Broadcast Latency -> used for tests
+	 * 
+	 * @return avg(time)
+	 */
+	private static long averageBroadcastLatency() {
+		msgCreated.forEach((id, time) -> {
+			sum += getDiffTime(id);
+		});
+		return sum / msgCreated.size();
 	}
 
 	/**
@@ -36,19 +62,7 @@ public class Stats {
 	 * @param UUID
 	 * @return time
 	 */
-	public static long getDiffTime(long UUID) {
-		return msgCreated.get(UUID) - msgSent.get(UUID);
-	}
-
-	/**
-	 * Gets the Average Broadcast Latency -> used for tests
-	 * 
-	 * @return avg(time)
-	 */
-	public static long AverageBroadcastLatency() {
-		msgCreated.forEach((UUID, time) -> {
-			sum += getDiffTime(UUID);
-		});
-		return sum / msgCreated.size();
+	private static long getDiffTime(UUID id) {
+		return msgSent.get(id) - msgCreated.get(id);
 	}
 }
