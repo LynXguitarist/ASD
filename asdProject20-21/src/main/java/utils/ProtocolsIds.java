@@ -2,7 +2,7 @@ package utils;
 
 public enum ProtocolsIds {
 	EARGER_PUSH_GOSSIP((short) 200), PLUMTREE((short) 201), FLOOD((short) 202), 
-		CYCLON((short) 300), SIMPLE_FULL_MEMBERSHIP((short) 301);
+		CYCLON((short) 500), SIMPLE_FULL_MEMBERSHIP((short) 501);
 
 	private short id;
 
