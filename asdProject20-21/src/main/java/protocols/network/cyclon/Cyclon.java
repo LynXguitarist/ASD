@@ -30,6 +30,7 @@ import network.data.Host;
 import protocols.membership.common.notifications.ChannelCreated;
 import protocols.membership.common.notifications.NeighbourDown;
 import protocols.membership.common.notifications.NeighbourUp;
+import protocols.membership.common.notifications.Neighbours;
 import protocols.network.messages.CyclonMessage;
 import protocols.network.messages.CyclonMessageMerge;
 import protocols.network.timers.CyclonInfoTimer;
@@ -52,7 +53,7 @@ public class Cyclon extends GenericProtocol {
 	private final int sampleTime; // param: timeout for samples
 	private final int subsetSize; // param: maximum size of sample;
 
-	// private Map<Host, Integer> pview; // Neighbors sent in the last shuffle
+	private Map<Host, Integer> pview; // Neighbors sent in the last shuffle
 	private Map<Host, Integer> sampleHosts;
 
 	private final Random rnd;
@@ -65,7 +66,7 @@ public class Cyclon extends GenericProtocol {
 		this.self = self;
 		this.membership = new HashMap<>();
 		this.pending = new HashMap<>();
-		// this.pview = new HashMap<>();
+		this.pview = new HashMap<>();
 
 		this.sampleHosts = new HashMap<>();
 		this.rnd = new Random();
@@ -125,9 +126,10 @@ public class Cyclon extends GenericProtocol {
 				String[] hostElems = contact.split(":");
 				Host contactHost = new Host(InetAddress.getByName(hostElems[0]), Short.parseShort(hostElems[1]));
 				// We add to the pending set until the connection is successful
-				pending.put(contactHost, 0);
+				// pending.put(contactHost, 0);
 				openConnection(contactHost);
 				membership.put(contactHost, 0);
+				logger.info("Opened connection with: " + contactHost);
 			} catch (Exception e) {
 				logger.error("Invalid contact on configuration: '" + props.getProperty("contacts"));
 				e.printStackTrace();
@@ -146,8 +148,13 @@ public class Cyclon extends GenericProtocol {
 			setupPeriodicTimer(new CyclonInfoTimer(), pMetricsInterval, pMetricsInterval);
 	}
 
+	private void uponGetNeigbours() {
+		pview = membership;
+		triggerNotification(new Neighbours(pview.keySet()));
+	}
+
 	private void uponShuffle(CyclonSampleTimer timer, long timerId) {
-		logger.info("started shuffling...");
+		logger.info("started shuffling membership -> " + membership);
 		Entry<Host, Integer> oldest = null; // oldest neigh -> p in the algorithm
 		for (Map.Entry<Host, Integer> entry : membership.entrySet()) {
 			int newAge = entry.getValue() + 1;
@@ -158,22 +165,24 @@ public class Cyclon extends GenericProtocol {
 
 		if (oldest != null) {
 			logger.info("Oldest Neighbour: " + oldest.getKey());
-			sampleHosts = getRandomSubsetExcluding(membership, subsetSize, oldest.getKey());
+			membership.remove(oldest.getKey());
+			uponGetNeigbours();
+
+			sampleHosts = getRandomSubset(membership, subsetSize);
 			sampleHosts.put(self, 0);
 
-			logger.info("Sample Hosts: " + sampleHosts);
-			logger.info("Sending request to oldest...");
+			logger.info("Sending request with sample: " + sampleHosts + " to oldest: " + oldest.getKey());
 			sendMessage(new CyclonMessage(sampleHosts), oldest.getKey());
 		}
 	}
 
 	private void uponReceiveShuffle(CyclonMessage msg, Host to, short sourceProto, int channelId) {
-		logger.debug("Sending {} to {}", msg, to);
+		logger.debug("Received {} to {}", msg, to);
 		// temporarySample
-		Map<Host, Integer> tmpSample = getRandomSubset(membership, membership.size());
+		Map<Host, Integer> tmpSample = getRandomSubset(membership, subsetSize);
 
-		Map<Host, Integer> samplePeers = msg.getSample();
-		mergeView(samplePeers, tmpSample);
+		Map<Host, Integer> peerSample = msg.getSample();
+		mergeView(peerSample, tmpSample);
 
 		// Trigger Send (ShuffleReply, s, temporarySample);
 		sendMessage(new CyclonMessageMerge(tmpSample), to);
@@ -184,13 +193,13 @@ public class Cyclon extends GenericProtocol {
 		mergeView(msg.getSample(), sampleHosts);
 	}
 
-	private void mergeView(Map<Host, Integer> samplePeers, Map<Host, Integer> mySample) {
-		logger.info("Merging view...");
-		Map<Host, Integer> result = membership;
+	private void mergeView(Map<Host, Integer> peerSample, Map<Host, Integer> mySample) {
+		logger.info("Merging view peerSample: " + peerSample + " with mySample: " + mySample);
 
-		for (Map.Entry<Host, Integer> entry : samplePeers.entrySet()) {
+		for (Map.Entry<Host, Integer> entry : peerSample.entrySet()) {
 			Host peer = entry.getKey();
 			int age = entry.getValue();
+
 			if (membership.containsKey(peer) && membership.get(peer) > age) {
 				logger.info("Updating peer: " + peer + " to age: " + age);
 				membership.put(peer, age);
@@ -199,17 +208,15 @@ public class Cyclon extends GenericProtocol {
 				membership.put(peer, age);
 				openConnection(peer);
 			} else {
-				result.keySet().retainAll(mySample.keySet());
+				Map<Host, Integer> merged = membership; // merged view
 				// elem in neigh that is also in mySample
+				merged.keySet().retainAll(mySample.keySet());
+
 				Host h = null;
-				logger.info("Host h:" + h);
-				if (result.isEmpty()) {
-					logger.info("There are no neigh...");
-					// random elem to be replaced
+				if (merged.isEmpty()) { // Pick a random element of neigh
 					h = getRandom(membership.keySet());
-				} else {
-					logger.info("Get random peer from neigh...");
-					h = getRandom(result.keySet());
+				} else {// Pick an element of neigh that is also in mySample
+					h = getRandom(merged.keySet());
 				}
 				logger.info("Closing connection with peer: " + h);
 				membership.remove(h);
@@ -220,6 +227,7 @@ public class Cyclon extends GenericProtocol {
 				openConnection(peer);
 			}
 		}
+		uponGetNeigbours(); // aqui fica mal porque pode nao atualizar
 	}
 
 	/*--------------------------------- Messages ---------------------------------------- */
@@ -328,7 +336,7 @@ public class Cyclon extends GenericProtocol {
 	private void uponInfoTime(CyclonInfoTimer timer, long timerId) {
 		StringBuilder sb = new StringBuilder("Membership Metrics:\n");
 		sb.append("Membership: ").append(membership).append("\n");
-		sb.append("PendingMembership: ").append(pending).append("\n");
+		// sb.append("PendingMembership: ").append(pending).append("\n");
 		// getMetrics returns an object with the number of events of each type processed
 		// by this protocol.
 		// It may or may not be useful to you, but at least you know it exists.

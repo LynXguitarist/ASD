@@ -27,7 +27,7 @@ public class CyclonMessageMerge extends ProtoMessage {
 
     @Override
     public String toString() {
-        return "ShuffleMessage{" +
+        return "CyclonMsgMerge{" +
                 "subset=" + sample +
                 '}';
     }
