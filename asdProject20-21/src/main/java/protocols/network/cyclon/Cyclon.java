@@ -168,19 +168,19 @@ public class Cyclon extends GenericProtocol {
 	}
 
 	private void uponReceiveShuffle(CyclonMessage msg, Host to, short sourceProto, int channelId) {
-		logger.info("UponReceiveShuffle HOST from: " + to);
+		logger.debug("Sending {} to {}", msg, to);
 		// temporarySample
 		Map<Host, Integer> tmpSample = getRandomSubset(membership, membership.size());
 
 		Map<Host, Integer> samplePeers = msg.getSample();
 		mergeView(samplePeers, tmpSample);
 
-		logger.info("Sending msg to host: " + to);
 		// Trigger Send (ShuffleReply, s, temporarySample);
 		sendMessage(new CyclonMessageMerge(tmpSample), to);
 	}
 
 	private void uponReceiveShuffleReply(CyclonMessageMerge msg, Host from, short sourceProto, int channelId) {
+		logger.debug("Received {} from {}", msg, from);
 		mergeView(msg.getSample(), sampleHosts);
 	}
 

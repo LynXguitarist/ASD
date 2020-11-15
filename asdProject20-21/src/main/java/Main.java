@@ -78,12 +78,15 @@ public class Main {
 			if (config.toUpperCase().equals(ProtocolsName.EARGER_PUSH_GOSSIP.getName())) { // EagerPushGossip
 				broadcast = new EagerPushGossip(props, myself);
 				broadcastApp = new BroadcastApp(myself, props, ProtocolsIds.EARGER_PUSH_GOSSIP.getId());
+				logger.info("Started broadcast EagerPushGossip...");
 			} else if (config.toUpperCase().equals(ProtocolsName.PLUMTREE.getName())) { // PlumTree
 				broadcast = new PlumTree(props, myself);
 				broadcastApp = new BroadcastApp(myself, props, ProtocolsIds.PLUMTREE.getId());
+				logger.info("Started broadcast PlumTree...");
 			} else if (config.toUpperCase().equals(ProtocolsName.FLOOD.getName())) { // Flood
 				broadcast = new FloodBroadcast(props, myself);
 				broadcastApp = new BroadcastApp(myself, props, ProtocolsIds.FLOOD.getId());
+				logger.info("Started broadcast Flood...");
 			} else
 				throw new NullPointerException("Invalid Broadcast Protocol!");
 		} catch (IOException | HandlerRegistrationException e) {
@@ -91,6 +94,7 @@ public class Main {
 			e.printStackTrace();
 		}
 		GenericProtocol membership = pickMembershipProtocol(props.getProperty("membership_protocol"), props, myself);
+		
 		// Register applications in babel
 		babel.registerProtocol(broadcastApp);
 		babel.registerProtocol(broadcast);
@@ -109,9 +113,11 @@ public class Main {
 		try {
 			if (config.toUpperCase().equals(ProtocolsName.CYCLON.getName())) { // Cyclon
 				membership = new Cyclon(props, myself);
+				logger.info("Started membership Cyclon...");
 				return membership;
 			} else if (config.toUpperCase().equals(ProtocolsName.SIMPLE_FULL_MEMBERSHIP.getName())) { // SimpleFullMembership
 				membership = new SimpleFullMembership(props, myself);
+				logger.info("Started membership SimpleFullMemberShip...");
 				return membership;
 			} else
 				throw new NullPointerException("Invalid Membership Protocol!");
