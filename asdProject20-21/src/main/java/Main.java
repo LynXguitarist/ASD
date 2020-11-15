@@ -1,4 +1,6 @@
 import babel.core.Babel;
+import babel.exceptions.HandlerRegistrationException;
+import babel.exceptions.ProtocolAlreadyExistsException;
 import network.data.Host;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -9,75 +11,124 @@ import protocols.broadcast.plumtree.PlumTree;
 import protocols.membership.full.SimpleFullMembership;
 import protocols.network.cyclon.Cyclon;
 import utils.InterfaceToIp;
+import utils.ProtocolsIds;
+import utils.ProtocolsName;
 
+import java.io.IOException;
 import java.net.InetAddress;
 import java.util.Properties;
 
-
 public class Main {
 
-    //Sets the log4j (logging library) configuration file
-    static { 
-        System.setProperty("log4j.configurationFile", "log4j2.xml");
-    }
+	// Sets the log4j (logging library) configuration file
+	static {
+		System.setProperty("log4j.configurationFile", "log4j2.xml");
+	}
 
-    //Creates the logger object
-    private static final Logger logger = LogManager.getLogger(Main.class);
+	// Creates the logger object
+	private static final Logger logger = LogManager.getLogger(Main.class);
 
-    //Default babel configuration file (can be overridden by the "-config" launch argument)
-    private static final String DEFAULT_CONF = "babel_config.properties";
+	// Default babel configuration file (can be overridden by the "-config" launch
+	// argument)
+	private static final String DEFAULT_CONF = "babel_config.properties";
 
-    public static void main(String[] args) throws Exception {
+	private static Babel babel;
 
-        //Get the (singleton) babel instance
-        Babel babel = Babel.getInstance();
+	public static void main(String[] args) throws Exception {
 
-        //Loads properties from the configuration file, and merges them with properties passed in the launch arguments
-        Properties props = Babel.loadConfig(args, DEFAULT_CONF);
+		// Get the (singleton) babel instance
+		babel = Babel.getInstance();
 
-        //If you pass an interface name in the properties (either file or arguments), this wil get the IP of that interface
-        //and create a property "address=ip" to be used later by the channels.
-        InterfaceToIp.addInterfaceIp(props);
+		// Loads properties from the configuration file, and merges them with properties
+		// passed in the launch arguments
+		Properties props = Babel.loadConfig(args, DEFAULT_CONF);
 
-        //The Host object is an address/port pair that represents a network host. It is used extensively in babel
-        //It implements equals and hashCode, and also includes a serializer that makes it easy to use in network messages
-        Host myself =  new Host(InetAddress.getByName(props.getProperty("address")),
-                Integer.parseInt(props.getProperty("port")));
+		// If you pass an interface name in the properties (either file or arguments),
+		// this wil get the IP of that interface
+		// and create a property "address=ip" to be used later by the channels.
+		InterfaceToIp.addInterfaceIp(props);
 
-        logger.info("Hello, I am {}", myself);
+		// The Host object is an address/port pair that represents a network host. It is
+		// used extensively in babel
+		// It implements equals and hashCode, and also includes a serializer that makes
+		// it easy to use in network messages
+		Host myself = new Host(InetAddress.getByName(props.getProperty("address")),
+				Integer.parseInt(props.getProperty("port")));
 
-        // Application
-        //BroadcastApp broadcastApp = new BroadcastApp(myself, props, FloodBroadcast.PROTOCOL_ID);
-        //BroadcastApp broadcastApp = new BroadcastApp(myself, props, EagerPushGossip.PROTOCOL_ID);
-        //BroadcastApp broadcastApp = new BroadcastApp(myself, props, PlumTree.PROTOCOL_ID);
-        
-        // Broadcast Protocol
-        //FloodBroadcast broadcast = new FloodBroadcast(props, myself);
-        //EagerPushGossip broadcast = new EagerPushGossip(props, myself);
-        //PlumTree broadcast = new PlumTree(props, myself);
+		logger.info("Hello, I am {}", myself);
 
-        // Membership Protocol
-        //SimpleFullMembership membership = new SimpleFullMembership(props, myself);
-        Cyclon membership = new Cyclon(props, myself);
+		// Broadcast Protocol
+		pickBroadcastProtocol(props.getProperty("broadcast_protocol"), props, myself);
 
-        //Register applications in babel
-        //babel.registerProtocol(broadcastApp);
-        //babel.registerProtocol(broadcast);
-        babel.registerProtocol(membership);
+		// Membership Protocol
+		pickMembershipProtocol(props.getProperty("membership_protocol"), props, myself);
 
+		// Start babel and protocol threads
+		babel.start();
 
+		Runtime.getRuntime().addShutdownHook(new Thread(() -> logger.info("Goodbye")));
+	}
 
-        //Init the protocols. This should be done after creating all protocols, since there can be inter-protocol
-        //communications in this step.
-        //broadcastApp.init(props);
-       //broadcast.init(props);
-        membership.init(props);
+	// Init the protocols. This should be done after creating all protocols, since
+	// there can be inter-protocol
+	// communications in this step.
+	private static void pickBroadcastProtocol(String config, Properties props, Host myself) {
+		try {
+			if (config.toUpperCase().equals(ProtocolsName.EARGER_PUSH_GOSSIP.getName())) { // EagerPushGossip
+				EagerPushGossip broadcast;
+				broadcast = new EagerPushGossip(props, myself);
+				BroadcastApp broadcastApp = new BroadcastApp(myself, props, ProtocolsIds.EARGER_PUSH_GOSSIP.getId());
+				broadcastApp.init(props);
+				broadcast.init(props);
+				// Register applications in babel
+				babel.registerProtocol(broadcastApp);
+				babel.registerProtocol(broadcast);
+			} else if (config.toUpperCase().equals(ProtocolsName.PLUMTREE.getName())) { // PlumTree
+				PlumTree broadcast = new PlumTree(props, myself);
+				BroadcastApp broadcastApp = new BroadcastApp(myself, props, ProtocolsIds.PLUMTREE.getId());
+				broadcastApp.init(props);
+				broadcast.init(props);
+				// Register applications in babel
+				babel.registerProtocol(broadcastApp);
+				babel.registerProtocol(broadcast);
+			} else if (config.toUpperCase().equals(ProtocolsName.FLOOD.getName())) { // Flood
+				FloodBroadcast broadcast = new FloodBroadcast(props, myself);
+				BroadcastApp broadcastApp = new BroadcastApp(myself, props, ProtocolsIds.FLOOD.getId());
+				broadcastApp.init(props);
+				broadcast.init(props);
+				// Register applications in babel
+				babel.registerProtocol(broadcastApp);
+				babel.registerProtocol(broadcast);
+			} else
+				throw new NullPointerException("Invalid Broadcast Protocol!");
+		} catch (IOException | HandlerRegistrationException | ProtocolAlreadyExistsException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 
-        //Start babel and protocol threads
-        babel.start();
+	}
 
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> logger.info("Goodbye")));
-
-    }
+	// Init the protocols. This should be done after creating all protocols, since
+	// there can be inter-protocol
+	// communications in this step.
+	private static void pickMembershipProtocol(String config, Properties props, Host myself) {
+		try {
+			if (config.toUpperCase().equals(ProtocolsName.CYCLON.getName())) { // Cyclon
+				Cyclon membership = new Cyclon(props, myself);
+				membership.init(props);
+				// Register applications in babel
+				babel.registerProtocol(membership);
+			} else if (config.toUpperCase().equals(ProtocolsName.SIMPLE_FULL_MEMBERSHIP.getName())) { // SimpleFullMembership
+				SimpleFullMembership membership = new SimpleFullMembership(props, myself);
+				membership.init(props);
+				// Register applications in babel
+				babel.registerProtocol(membership);
+			} else
+				throw new NullPointerException("Invalid Membership Protocol!");
+		} catch (IOException | HandlerRegistrationException | ProtocolAlreadyExistsException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
 
 }

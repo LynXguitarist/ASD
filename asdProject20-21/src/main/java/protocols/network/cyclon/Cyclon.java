@@ -52,7 +52,7 @@ public class Cyclon extends GenericProtocol {
 	private final int sampleTime; // param: timeout for samples
 	private final int subsetSize; // param: maximum size of sample;
 
-	//private Map<Host, Integer> pview; // Neighbors sent in the last shuffle
+	// private Map<Host, Integer> pview; // Neighbors sent in the last shuffle
 	private Map<Host, Integer> sampleHosts;
 
 	private final Random rnd;
@@ -65,7 +65,7 @@ public class Cyclon extends GenericProtocol {
 		this.self = self;
 		this.membership = new HashMap<>();
 		this.pending = new HashMap<>();
-		//this.pview = new HashMap<>();
+		// this.pview = new HashMap<>();
 
 		this.sampleHosts = new HashMap<>();
 		this.rnd = new Random();
