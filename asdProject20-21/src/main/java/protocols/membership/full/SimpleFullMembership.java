@@ -303,19 +303,21 @@ public class SimpleFullMembership extends GenericProtocol {
 		Stats.setNumberReceived(numberReceived);
 		Stats.setNumberBytesIn(numberBytesIn);
 		Stats.setNumberBytesOut(numberBytesOut);
-		
+
 		LogStats ls = new LogStats(numberSent, numberReceived, numberBytesOut, numberBytesIn);
-		
+
 		ls.joinMsgCreated(Stats.getMsgCreated());
 		ls.joinMsgSent(Stats.getMsgSent());
 		try {
-			String userDir = Paths.get(System.getProperty("user.dir")).getParent().toString();
-			String folderPath = userDir + "/AllLogs/";
+			// String userDir =
+			// Paths.get(System.getProperty("user.dir")).getParent().toString();
+			// String folderPath = userDir + "AllLogs/";
+			String folderPath = "/home/asd02/pasta-cluster";
 			Files.createDirectories(Paths.get(folderPath));
-			
-			logger.info("Created dir in "+ folderPath);
-			
-			String path =  folderPath + "log" + self.getAddress().getHostAddress() + ".txt";
+
+			logger.info("Created dir in " + folderPath);
+
+			String path = folderPath + "log" + self.getAddress().getHostAddress() + ".txt";
 			File file = new File(path);
 			FileOutputStream f = new FileOutputStream(file);
 			ObjectOutput out = new ObjectOutputStream(f);
@@ -325,6 +327,6 @@ public class SimpleFullMembership extends GenericProtocol {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		
+
 	}
 }
