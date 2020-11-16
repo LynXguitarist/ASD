@@ -16,6 +16,7 @@ import protocols.membership.full.messages.SampleMessage;
 import protocols.membership.full.timers.InfoTimer;
 import protocols.membership.full.timers.SampleTimer;
 import utils.ProtocolsIds;
+import utils.Stats;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -293,7 +294,8 @@ public class SimpleFullMembership extends GenericProtocol {
 		String bytesIn = "\nNumber Bytes In: " + numberBytesIn;
 		String nOut = "\nNumber Msg Out: " + numberSent;
 		String bytesOut = "\nNumber Msg Out: " + numberBytesOut;
-		logger.info(nIn + bytesIn + nOut + bytesOut);
+		String latency = "\nLatency: "+Stats.averageBroadcastLatency();
+		logger.info(nIn + bytesIn + nOut + bytesOut + latency);
 
 	}
 }

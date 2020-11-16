@@ -1,13 +1,7 @@
 package protocols.network.cyclon;
 
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.ObjectOutput;
-import java.io.ObjectOutputStream;
 import java.net.InetAddress;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -42,7 +36,6 @@ import protocols.network.messages.CyclonMessage;
 import protocols.network.messages.CyclonMessageMerge;
 import protocols.network.timers.CyclonInfoTimer;
 import protocols.network.timers.CyclonSampleTimer;
-import utils.LogStats;
 import utils.ProtocolsIds;
 import utils.Stats;
 
@@ -381,12 +374,12 @@ public class Cyclon extends GenericProtocol {
 			numberBytesIn += c.getReceivedAppBytes();
 			numberBytesOut += c.getSentAppBytes();
 		}
-
 		String nIn = "Number Msg In: " + numberReceived;
 		String bytesIn = "\nNumber Bytes In: " + numberBytesIn;
 		String nOut = "\nNumber Msg Out: " + numberSent;
 		String bytesOut = "\nNumber Msg Out: " + numberBytesOut;
-		logger.info(nIn + bytesIn + nOut + bytesOut);
+		String latency = "\nLatency: " + Stats.averageBroadcastLatency();
+		logger.info(nIn + bytesIn + nOut + bytesOut + latency);
 
 	}
 

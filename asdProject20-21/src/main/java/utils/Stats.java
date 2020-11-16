@@ -12,6 +12,7 @@ public class Stats {
 	private static Map<UUID, Long> msgSent = new HashMap<>();
 
 	private static long numberSent, numberReceived, numberBytesIn, numberBytesOut;
+	private static long sum = 0; 
 
 
 	public static Map<UUID, Long> getMsgCreated() {
@@ -54,6 +55,13 @@ public class Stats {
 				msgSent.put(id, time);
 		});
 	}
+	
+	public static long averageBroadcastLatency() { 
+		msgCreated.forEach((id, time) -> { 
+			sum += getDiffTime(id); 
+		}); 
+		return sum / msgCreated.size(); 
+	} 
 
 	public static  long getNumberSent() {
 		return numberSent;
@@ -86,5 +94,16 @@ public class Stats {
 	public static void setNumberBytesOut(long num) {
 		numberBytesOut = num;
 	}
+	
+	/** 
+	 * Gets the diff between the last time a node sent the msg with the time of 
+	 * creation of the msg 
+	 *  
+	 * @param UUID 
+	 * @return time 
+	 */ 
+	private static long getDiffTime(UUID id) { 
+		return msgSent.get(id) - msgCreated.get(id); 
+	} 
 
 }
