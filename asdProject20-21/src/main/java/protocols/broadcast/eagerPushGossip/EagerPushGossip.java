@@ -11,6 +11,7 @@ import protocols.broadcast.common.DeliverNotification;
 import protocols.membership.common.notifications.ChannelCreated;
 import protocols.membership.common.notifications.NeighbourDown;
 import protocols.membership.common.notifications.NeighbourUp;
+import protocols.membership.common.notifications.Neighbours;
 import utils.ProtocolsIds;
 import protocols.broadcast.eagerPushGossip.messages.EPGMessage;
 
@@ -43,6 +44,7 @@ public class EagerPushGossip extends GenericProtocol {
 		registerRequestHandler(BroadcastRequest.REQUEST_ID, this::uponBroadcastRequest);
 
 		/*--------------------- Register Notification Handlers ----------------------------- */
+		subscribeNotification(Neighbours.NOTIFICATION_ID, this::uponNeighbours);
 		subscribeNotification(NeighbourUp.NOTIFICATION_ID, this::uponNeighbourUp);
 		subscribeNotification(NeighbourDown.NOTIFICATION_ID, this::uponNeighbourDown);
 		subscribeNotification(ChannelCreated.NOTIFICATION_ID, this::uponChannelCreated);
@@ -132,6 +134,14 @@ public class EagerPushGossip extends GenericProtocol {
 		// If a message fails to be sent, for whatever reason, log the message and the
 		// reason
 		logger.error("Message {} to {} failed, reason: {}", msg, host, throwable);
+	}
+	
+	private void uponNeighbours(Neighbours notification, short sourceProto) {
+		neighbours.clear();
+		for(Host h : notification.getNeighbours()) {
+			neighbours.add(h);
+		}
+		logger.info("New neighbours: " + neighbours);
 	}
 
 	private void uponNeighbourUp(NeighbourUp notification, short sourceProto) {

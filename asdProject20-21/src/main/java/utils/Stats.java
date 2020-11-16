@@ -12,6 +12,8 @@ public class Stats {
 	private static Map<UUID, Long> msgSent = new HashMap<>();
 	private static long sum = 0;
 
+	private static long numberSent, numberReceived, numberBytesIn, numberBytesOut;
+
 	/**
 	 * Called every time a msg is created to be sent
 	 * 
@@ -19,8 +21,7 @@ public class Stats {
 	 */
 	public static void addMsgCreated(UUID id) {
 		long currentTime = System.currentTimeMillis();
-		msgCreated.put(id, currentTime);
-		msgSent.put(id, currentTime);
+		msgCreated.putIfAbsent(id, currentTime);
 	}
 
 	/**
@@ -32,11 +33,28 @@ public class Stats {
 		msgSent.put(id, System.currentTimeMillis());
 	}
 
+	public static void setNumberSent(long num) {
+		numberSent = num;
+	}
+
+	public static void setNumberReceived(long num) {
+		numberReceived = num;
+	}
+	
+	public static void setNumberBytesIn(long num) {
+		numberBytesIn = num;
+	}
+	
+	public static void setNumberBytesOut(long num) {
+		numberBytesOut = num;
+	}
+
 	public static String printStats() {
-		String avgBroadcastRel = "Average Broadcast reliability: " + msgCreated.size() / msgSent.size();
+		double avgBroad = ((double) numberReceived / numberSent) * 100;
+		String avgBroadcastRel = "Average Broadcast reliability: " + avgBroad;
 		String avgBroadcastLat = "\nAverage Broadcast latency:(ms) " + averageBroadcastLatency();
-		String totMsgTrans = "\nTotal Messages/Bytes Transmitted: " + msgCreated.size();
-		String totMsgRec = "\nTotal Messages/Bytes Received: " + msgSent.size();
+		String totMsgTrans = "\nTotal Messages/Bytes Transmitted: " + numberBytesOut;
+		String totMsgRec = "\nTotal Messages/Bytes Received: " + numberBytesIn;
 		String stats = avgBroadcastRel + avgBroadcastLat + totMsgTrans + totMsgRec;
 		return stats;
 	}

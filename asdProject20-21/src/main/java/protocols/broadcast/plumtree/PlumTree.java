@@ -15,6 +15,7 @@ import protocols.broadcast.plumtree.messages.PruneMessage;
 import protocols.membership.common.notifications.ChannelCreated;
 import protocols.membership.common.notifications.NeighbourDown;
 import protocols.membership.common.notifications.NeighbourUp;
+import protocols.membership.common.notifications.Neighbours;
 import protocols.membership.full.timers.Timer;
 import utils.ProtocolsIds;
 
@@ -67,6 +68,7 @@ public class PlumTree extends GenericProtocol {
         registerRequestHandler(BroadcastRequest.REQUEST_ID, this::uponBroadcastRequest);
 
         /*--------------------- Register Notification Handlers ----------------------------- */
+        subscribeNotification(Neighbours.NOTIFICATION_ID, this::uponNeighbours);
         subscribeNotification(NeighbourUp.NOTIFICATION_ID, this::uponNeighbourUp);
         subscribeNotification(NeighbourDown.NOTIFICATION_ID, this::uponNeighbourDown);
         subscribeNotification(ChannelCreated.NOTIFICATION_ID, this::uponChannelCreated);
@@ -259,6 +261,14 @@ public class PlumTree extends GenericProtocol {
 
     /*--------------------------------- Notifications ---------------------------------------- */
 
+    private void uponNeighbours(Neighbours notification, short sourceProto) {
+		neighbours.clear();
+		for(Host h : notification.getNeighbours()) {
+			neighbours.add(h);
+		}
+		logger.info("New neighbours: " + neighbours);
+	}
+    
     //When the membership protocol notifies of a new neighbour (or leaving one) simply update my list of neighbours.
     private void uponNeighbourUp(NeighbourUp notification, short sourceProto) {
         for(Host h: notification.getNeighbours()) {

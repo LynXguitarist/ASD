@@ -26,6 +26,7 @@ import channel.tcp.events.InConnectionUp;
 import channel.tcp.events.OutConnectionDown;
 import channel.tcp.events.OutConnectionFailed;
 import channel.tcp.events.OutConnectionUp;
+import channel.tcp.events.ChannelMetrics.ConnectionMetrics;
 import network.data.Host;
 import protocols.membership.common.notifications.ChannelCreated;
 import protocols.membership.common.notifications.NeighbourDown;
@@ -36,6 +37,7 @@ import protocols.network.messages.CyclonMessageMerge;
 import protocols.network.timers.CyclonInfoTimer;
 import protocols.network.timers.CyclonSampleTimer;
 import utils.ProtocolsIds;
+import utils.Stats;
 
 public class Cyclon extends GenericProtocol {
 
@@ -343,27 +345,42 @@ public class Cyclon extends GenericProtocol {
 	// "getOldInConnections" and "getOldOutConnections" returns connections that
 	// have already been closed.
 	private void uponChannelMetrics(ChannelMetrics event, int channelId) {
-		StringBuilder sb = new StringBuilder("Channel Metrics:\n");
-		sb.append("In channels:\n");
-		event.getInConnections()
-				.forEach(c -> sb.append(
-						String.format("\t%s: msgOut=%s (%s) msgIn=%s (%s)\n", c.getPeer(), c.getSentAppMessages(),
-								c.getSentAppBytes(), c.getReceivedAppMessages(), c.getReceivedAppBytes())));
-		event.getOldInConnections()
-				.forEach(c -> sb.append(
-						String.format("\t%s: msgOut=%s (%s) msgIn=%s (%s) (old)\n", c.getPeer(), c.getSentAppMessages(),
-								c.getSentAppBytes(), c.getReceivedAppMessages(), c.getReceivedAppBytes())));
-		sb.append("Out channels:\n");
-		event.getOutConnections()
-				.forEach(c -> sb.append(
-						String.format("\t%s: msgOut=%s (%s) msgIn=%s (%s)\n", c.getPeer(), c.getSentAppMessages(),
-								c.getSentAppBytes(), c.getReceivedAppMessages(), c.getReceivedAppBytes())));
-		event.getOldOutConnections()
-				.forEach(c -> sb.append(
-						String.format("\t%s: msgOut=%s (%s) msgIn=%s (%s) (old)\n", c.getPeer(), c.getSentAppMessages(),
-								c.getSentAppBytes(), c.getReceivedAppMessages(), c.getReceivedAppBytes())));
-		sb.setLength(sb.length() - 1);
-		logger.info(sb);
+		int numberSent = 0;
+		int numberReceived = 0;
+		int numberBytesIn = 0;
+		int numberBytesOut = 0;
+
+		for (ConnectionMetrics c : event.getInConnections()) {
+			numberReceived += c.getReceivedAppMessages();
+			numberSent += c.getSentAppMessages();
+			numberBytesIn += c.getReceivedAppBytes();
+			numberBytesOut += c.getSentAppBytes();
+		}
+		for (ConnectionMetrics c : event.getOldInConnections()) {
+			numberReceived += c.getReceivedAppMessages();
+			numberSent += c.getSentAppMessages();
+			numberBytesIn += c.getReceivedAppBytes();
+			numberBytesOut += c.getSentAppBytes();
+		}
+		for (ConnectionMetrics c : event.getOutConnections()) {
+			numberReceived += c.getReceivedAppMessages();
+			numberSent += c.getSentAppMessages();
+			numberBytesIn += c.getReceivedAppBytes();
+			numberBytesOut += c.getSentAppBytes();
+		}
+		for (ConnectionMetrics c : event.getOldOutConnections()) {
+			numberReceived += c.getReceivedAppMessages();
+			numberSent += c.getSentAppMessages();
+			numberBytesIn += c.getReceivedAppBytes();
+			numberBytesOut += c.getSentAppBytes();
+		}
+
+		// Stores the msgs received, sent and failed
+		Stats.setNumberSent(numberSent);
+		Stats.setNumberReceived(numberReceived);
+		Stats.setNumberBytesIn(numberBytesIn);
+		Stats.setNumberBytesOut(numberBytesOut);
+		Stats.printStats();
 	}
 
 }
