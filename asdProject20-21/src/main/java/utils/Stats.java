@@ -40,11 +40,11 @@ public class Stats {
 	public static void setNumberReceived(long num) {
 		numberReceived = num;
 	}
-	
+
 	public static void setNumberBytesIn(long num) {
 		numberBytesIn = num;
 	}
-	
+
 	public static void setNumberBytesOut(long num) {
 		numberBytesOut = num;
 	}
@@ -53,8 +53,8 @@ public class Stats {
 		double avgBroad = ((double) numberReceived / numberSent) * 100;
 		String avgBroadcastRel = "Average Broadcast reliability: " + avgBroad;
 		String avgBroadcastLat = "\nAverage Broadcast latency:(ms) " + averageBroadcastLatency();
-		String totMsgTrans = "\nTotal Messages/Bytes Transmitted: " + numberBytesOut;
-		String totMsgRec = "\nTotal Messages/Bytes Received: " + numberBytesIn;
+		String totMsgTrans = "\nTotal Messages/Bytes Transmitted: " + numberSent + numberBytesOut + "(bytes)";
+		String totMsgRec = "\nTotal Messages/Bytes Received: " + numberReceived + numberBytesIn + "(bytes)";
 		String stats = avgBroadcastRel + avgBroadcastLat + totMsgTrans + totMsgRec;
 		return stats;
 	}
