@@ -15,18 +15,10 @@ import protocols.membership.common.notifications.NeighbourUp;
 import protocols.membership.full.messages.SampleMessage;
 import protocols.membership.full.timers.InfoTimer;
 import protocols.membership.full.timers.SampleTimer;
-import utils.LogStats;
 import utils.ProtocolsIds;
-import utils.Stats;
 
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.ObjectOutput;
-import java.io.ObjectOutputStream;
 import java.net.InetAddress;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.*;
 
 public class SimpleFullMembership extends GenericProtocol {
@@ -297,36 +289,11 @@ public class SimpleFullMembership extends GenericProtocol {
 			numberBytesIn += c.getReceivedAppBytes();
 			numberBytesOut += c.getSentAppBytes();
 		}
-
-		// Stores the msgs received, sent and failed
-		Stats.setNumberSent(numberSent);
-		Stats.setNumberReceived(numberReceived);
-		Stats.setNumberBytesIn(numberBytesIn);
-		Stats.setNumberBytesOut(numberBytesOut);
-
-		LogStats ls = new LogStats(numberSent, numberReceived, numberBytesOut, numberBytesIn);
-
-		ls.joinMsgCreated(Stats.getMsgCreated());
-		ls.joinMsgSent(Stats.getMsgSent());
-		try {
-			// String userDir =
-			// Paths.get(System.getProperty("user.dir")).getParent().toString();
-			// String folderPath = userDir + "AllLogs/";
-			String folderPath = "/home/asd02/pasta-cluster/AllLogs/";
-			Files.createDirectories(Paths.get(folderPath));
-
-			logger.info("Created dir in " + folderPath);
-
-			String path = folderPath + "log" + self.getAddress().getHostAddress() + ".txt";
-			File file = new File(path);
-			FileOutputStream f = new FileOutputStream(file);
-			ObjectOutput out = new ObjectOutputStream(f);
-			out.writeObject(ls);
-			out.close();
-			logger.info("File created...");
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+		String nIn = "Number Msg In: " + numberReceived;
+		String bytesIn = "\nNumber Bytes In: " + numberBytesIn;
+		String nOut = "\nNumber Msg Out: " + numberSent;
+		String bytesOut = "\nNumber Msg Out: " + numberBytesOut;
+		logger.info(nIn + bytesIn + nOut + bytesOut);
 
 	}
 }
