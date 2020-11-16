@@ -1,6 +1,10 @@
 package utils;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectInputStream;
 import java.util.UUID;
 
 public class PrintStats {
@@ -8,12 +12,12 @@ public class PrintStats {
 		String path = args[0];
 
 		File[] files = new File(path).listFiles();
-		Stats m = null;
-		Stats m1;
+		MyStats m = null;
+		MyStats m1;
 		for (File file : files != null ? files : new File[0]) {
 			if (file.isFile()) {
 				if (m == null)
-					m = WriteToFile.loadFromFile(file.getPath());
+					m = convertFromBytes(file.getPath().getBytes());
 				else {
 					m1 = WriteToFile.loadFromFile(file.getPath());
 					if (m1 != null) {
@@ -48,4 +52,10 @@ public class PrintStats {
 		System.err.println("Total Msg Lost: " + (m.getNumberReceived() - m.getNumberSent()));
 		System.err.println("Total Bytes Lost: " + (m.getNumberBytesIn() - m.getNumberBytesOut()));
 	}
+	
+	private static MyStats convertFromBytes(byte[] bytes) throws IOException, ClassNotFoundException {
+        try (ByteArrayInputStream bis = new ByteArrayInputStream(bytes); ObjectInput in = new ObjectInputStream(bis)) {
+            return in.readObject();
+        }
+    }
 }
