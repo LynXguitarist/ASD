@@ -79,7 +79,7 @@ public class PlumTree extends GenericProtocol {
     }
 
     private void uponTimer(Timer timer, long timerId) {
-        setupTimer(timer, lostMessageTimeOut2 );
+        timer.setSetUpID(setupTimer(timer, lostMessageTimeOut2 ));
         timers.add(timer);
         missing.forEach(missingElem->{
             if(missingElem.getId()==timer.getTimerId()){
@@ -174,7 +174,7 @@ public class PlumTree extends GenericProtocol {
         if (!received.containsKey(iHaveMessage.getMid())){
             if(!timers.contains(new Timer(iHaveMessage.getId()))){
                 Timer t = new Timer(iHaveMessage.getId());
-                setupTimer(t, lostMessageTimeOut );
+                t.setSetUpID(setupTimer(t, lostMessageTimeOut ));
 
                 timers.add(t);
             }
@@ -214,7 +214,7 @@ public class PlumTree extends GenericProtocol {
            if( missing.contains(new Missing(msg.getMid(), msg.getSender(), msg.getId()))){
                timers.forEach(timer -> {
                    if(Short.compare(timer.getTimerId(),msg.getId())== 0){
-                       cancelTimer(msg.getId());
+                       cancelTimer(timer.getSetUpID());
                    }
                });
            }
