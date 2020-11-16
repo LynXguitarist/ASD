@@ -374,12 +374,12 @@ public class Cyclon extends GenericProtocol {
 			numberBytesIn += c.getReceivedAppBytes();
 			numberBytesOut += c.getSentAppBytes();
 		}
-		Stats stats = new Stats();
+		
 		// Stores the msgs received, sent and failed
-		stats.setNumberSent(numberSent);
-		stats.setNumberReceived(numberReceived);
-		stats.setNumberBytesIn(numberBytesIn);
-		stats.setNumberBytesOut(numberBytesOut);
+		Stats.setNumberSent(numberSent);
+		Stats.setNumberReceived(numberReceived);
+		Stats.setNumberBytesIn(numberBytesIn);
+		Stats.setNumberBytesOut(numberBytesOut);
 	}
 
 }

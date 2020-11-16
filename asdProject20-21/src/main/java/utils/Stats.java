@@ -13,8 +13,6 @@ public class Stats {
 
 	private static long numberSent, numberReceived, numberBytesIn, numberBytesOut;
 
-	public Stats() {
-	}
 
 	public Map<UUID, Long> getMsgCreated() {
 		return msgCreated;
@@ -25,12 +23,12 @@ public class Stats {
 	 * 
 	 * @param UUID
 	 */
-	public void addMsgCreated(UUID id) {
+	public static  void addMsgCreated(UUID id) {
 		long currentTime = System.currentTimeMillis();
 		msgCreated.putIfAbsent(id, currentTime);
 	}
 
-	public Map<UUID, Long> getMsgSent() {
+	public static  Map<UUID, Long> getMsgSent() {
 		return msgSent;
 	}
 
@@ -39,15 +37,15 @@ public class Stats {
 	 * 
 	 * @param UUID
 	 */
-	public void addOrUpdateMsgSent(UUID id) {
+	public static  void addOrUpdateMsgSent(UUID id) {
 		msgSent.put(id, System.currentTimeMillis());
 	}
 
-	public void joinMsgCreated(Map<UUID, Long> map) {
+	public static  void joinMsgCreated(Map<UUID, Long> map) {
 		msgCreated.putAll(map);
 	}
 
-	public void joinMsgSent(Map<UUID, Long> map) {
+	public static  void joinMsgSent(Map<UUID, Long> map) {
 		map.forEach((id, time) -> {
 			if (msgSent.containsKey(id)) {
 				if (msgSent.get(id) < time)
@@ -57,35 +55,35 @@ public class Stats {
 		});
 	}
 
-	public long getNumberSent() {
+	public static  long getNumberSent() {
 		return numberSent;
 	}
 
-	public void setNumberSent(long num) {
+	public static  void setNumberSent(long num) {
 		numberSent = num;
 	}
 
-	public long getNumberReceived() {
+	public static  long getNumberReceived() {
 		return numberReceived;
 	}
 
-	public void setNumberReceived(long num) {
+	public static  void setNumberReceived(long num) {
 		numberReceived = num;
 	}
 
-	public long getNumberBytesIn() {
+	public static  long getNumberBytesIn() {
 		return numberBytesIn;
 	}
 
-	public void setNumberBytesIn(long num) {
+	public static  void setNumberBytesIn(long num) {
 		numberBytesIn = num;
 	}
 
-	public long getNumberBytesOut() {
+	public static  long getNumberBytesOut() {
 		return numberBytesOut;
 	}
 
-	public void setNumberBytesOut(long num) {
+	public static void setNumberBytesOut(long num) {
 		numberBytesOut = num;
 	}
 

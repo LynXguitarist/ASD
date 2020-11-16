@@ -14,6 +14,7 @@ import protocols.network.cyclon.Cyclon;
 import utils.InterfaceToIp;
 import utils.ProtocolsIds;
 import utils.ProtocolsName;
+import utils.Stats;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -34,7 +35,7 @@ public class Main {
 	private static final String DEFAULT_CONF = "babel_config.properties";
 
 	private static Babel babel;
-
+	
 	public static void main(String[] args) throws Exception {
 
 		// Get the (singleton) babel instance
