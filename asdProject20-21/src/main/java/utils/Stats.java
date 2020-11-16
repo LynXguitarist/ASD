@@ -97,12 +97,12 @@ public class Stats {
 		return toString;
 	}
 
-	private static long averageBroadcastLatency() {
-		long sum = 0;
+	private static double averageBroadcastLatency() {
+		double sum = 0;
 		for (Entry<UUID, Long> entry : msgCreated.entrySet()) {
 			sum += getDiffTime(entry.getKey());
 		}
-		return sum / msgCreated.size();
+		return (double) sum / msgCreated.size();
 	}
 
 	/**
