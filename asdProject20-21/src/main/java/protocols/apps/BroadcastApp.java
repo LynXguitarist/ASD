@@ -41,6 +41,8 @@ public class BroadcastApp extends GenericProtocol {
 	private final Host self;
 
 	private long broadCastTimer;
+	
+	private Stats stats = new Stats();
 
 	public BroadcastApp(Host self, Properties properties, short broadcastProtoId) throws HandlerRegistrationException {
 		super(PROTO_NAME, PROTO_ID);
@@ -89,7 +91,7 @@ public class BroadcastApp extends GenericProtocol {
 		sendRequest(request, broadcastProtoId);
 
 		// Saves the msg with the time when it was created/sent
-		Stats.addMsgCreated(request.getMsgId());
+		stats.addMsgCreated(request.getMsgId());
 	}
 
 	private void uponDeliver(DeliverNotification reply, short sourceProto) {
@@ -98,7 +100,7 @@ public class BroadcastApp extends GenericProtocol {
 				new String(reply.getMsg(), StandardCharsets.US_ASCII), reply.getMsg().length, reply.getSender());
 
 		// Updates the time when the msg was received
-		Stats.addOrUpdateMsgSent(reply.getMsgId());
+		stats.addOrUpdateMsgSent(reply.getMsgId());
 	}
 
 	private void uponStopTimer(StopTimer stopTimer, long timerId) {
@@ -109,7 +111,6 @@ public class BroadcastApp extends GenericProtocol {
 
 	private void uponExitTimer(ExitTimer exitTimer, long timerId) {
 		// Prints all the stats necessary for eval
-		logger.info(Stats.printStats());
 		logger.info("Exiting...");
 		System.exit(0);
 	}
