@@ -43,6 +43,7 @@ public class PlumTree extends GenericProtocol {
     private final Set<Timer> timers;
 
     private final int lostMessageTimeOut; //param: timeout for samples
+    private final int lostMessageTimeOut2; //param: timeout for samples
 
     //We can only start sending messages after the membership protocol informed us that the channel is ready
     private boolean channelReady;
@@ -60,7 +61,9 @@ public class PlumTree extends GenericProtocol {
         missing = new HashSet<>();
 
         this.timers = new HashSet<>();
-        this.lostMessageTimeOut = Integer.parseInt(properties.getProperty("lostMessageTimeOut", "2000")); //2 seconds
+        this.lostMessageTimeOut = Integer.parseInt(properties.getProperty("lostMessageTimeOut", "500")); //500 ms
+        this.lostMessageTimeOut2 = Integer.parseInt(properties.getProperty("lostMessageTimeOut2", "300")); //300 ms
+
 
         channelReady = false;
 
@@ -76,7 +79,7 @@ public class PlumTree extends GenericProtocol {
     }
 
     private void uponTimer(Timer timer, long timerId) {
-        setupTimer(timer, lostMessageTimeOut );
+        setupTimer(timer, lostMessageTimeOut2 );
         timers.add(timer);
         missing.forEach(missingElem->{
             if(missingElem.getId()==timer.getTimerId()){
