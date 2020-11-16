@@ -312,7 +312,7 @@ public class SimpleFullMembership extends GenericProtocol {
 			// String userDir =
 			// Paths.get(System.getProperty("user.dir")).getParent().toString();
 			// String folderPath = userDir + "AllLogs/";
-			String folderPath = "/home/asd02/pasta-cluster";
+			String folderPath = "/home/asd02/pasta-cluster/";
 			Files.createDirectories(Paths.get(folderPath));
 
 			logger.info("Created dir in " + folderPath);
