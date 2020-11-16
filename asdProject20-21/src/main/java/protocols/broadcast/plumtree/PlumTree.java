@@ -82,7 +82,9 @@ public class PlumTree extends GenericProtocol {
             if(missingElem.getId()==timer.getTimerId()){
                eagerPushPeers.add(missingElem.getSender());
                lazyPushPeers.remove(missingElem.getSender());
-               sendMessage(new GraftMessage(missingElem.getMid(),myself), missingElem.getSender());
+               if(neighbours.contains(missingElem.getSender())){
+                   sendMessage(new GraftMessage(missingElem.getMid(),myself), missingElem.getSender());
+               }
             }
         });
     }
@@ -157,8 +159,9 @@ public class PlumTree extends GenericProtocol {
         lazyPushPeers.remove(graftMessage.getSender());
 
         if(received.containsKey(graftMessage.getMid())){
-            //logger.info("FLOODMESSAGE__GRAFT");
-            sendMessage(new FloodMessage(graftMessage.getMid(), myself, sourceProto, received.get(graftMessage.getMid())), graftMessage.getSender());
+            if(neighbours.contains(graftMessage.getSender())) {
+                sendMessage(new FloodMessage(graftMessage.getMid(), myself, sourceProto, received.get(graftMessage.getMid())), graftMessage.getSender());
+            }
         }
 
     }
@@ -187,7 +190,6 @@ public class PlumTree extends GenericProtocol {
         if (!channelReady) return;
 
         //Create the message object.
-        //logger.info("FLOODMESSAGE__BROADCAST");
         FloodMessage msg = new FloodMessage(request.getMsgId(), request.getSender(), sourceProto, request.getMsg());
 
         //Call the same handler as when receiving a new FloodMessage (since the logic is the same)
@@ -197,10 +199,6 @@ public class PlumTree extends GenericProtocol {
     /*--------------------------------- Messages ---------------------------------------- */
     private void uponBroadcastMessage(FloodMessage msg, Host from, short sourceProto, int channelId) {
         logger.trace("Received {} from {}", msg, from);
-
-       // logger.info("*****MID****** :"+  msg.getMid());
-      //  logger.info("*****FROM****** :"+  from);
-
 
         //If we already received it once, do nothing (or we would end up with a nasty infinite loop)
         if (!received.containsKey(msg.getMid())) {
@@ -224,12 +222,13 @@ public class PlumTree extends GenericProtocol {
             eagerPushPeers.add(msg.getSender());
             lazyPushPeers.remove(msg.getSender());
         } else {
-           // logger.info("******SEGUNDA_VEZ******");
             eagerPushPeers.remove(msg.getSender());
             lazyPushPeers.add(msg.getSender());
 
             if(!myself.equals(msg.getSender())){
-                sendMessage(new PruneMessage(UUID.randomUUID(),myself),msg.getSender());
+                if(neighbours.contains(msg.getSender())) {
+                    sendMessage(new PruneMessage(UUID.randomUUID(), myself), msg.getSender());
+                }
             }
 
         }
@@ -239,8 +238,9 @@ public class PlumTree extends GenericProtocol {
         eagerPushPeers.forEach(host->{
             if (!host.equals(myself)) {
                 logger.trace("Sent {} to {}", msg, host);
-               // logger.info("*****EAGER_PUSH****** : " + host);
-                sendMessage(new FloodMessage(msg.getMid(), myself, msg.getToDeliver(), msg.getContent()), host);
+                if(neighbours.contains(host)) {
+                    sendMessage(new FloodMessage(msg.getMid(), myself, msg.getToDeliver(), msg.getContent()), host);
+                }
             }
         });
     }
@@ -248,7 +248,9 @@ public class PlumTree extends GenericProtocol {
     private void lazyPush(FloodMessage msg, Host myself){
         lazyPushPeers.forEach(host->{
             if(!host.equals(myself)) {
-                sendMessage(new IHaveMessage(msg.getMid(), myself, msg.getContent()),host);
+                if(neighbours.contains(host)) {
+                    sendMessage(new IHaveMessage(msg.getMid(), myself, msg.getContent()), host);
+                }
             }
         });
     }
@@ -286,20 +288,11 @@ public class PlumTree extends GenericProtocol {
             eagerPushPeers.remove(h);
             lazyPushPeers.remove(h);
 
-            missing.forEach(missingMessage->{
-                if(missingMessage.getSender().equals(h)){
-                    missing.remove(missingMessage);
-                }
-            });
+            missing.removeIf(missingMessage -> missingMessage.getSender().equals(h));
+
         }
     }
 
-    private void dispatch(){
-        lazyQueue.forEach(message->{
-            sendMessage(message,message.getSender());
-        });
-        lazyQueue.clear();
-    }
 
 
 }
