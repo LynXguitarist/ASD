@@ -1,6 +1,9 @@
 package protocols.network.cyclon;
 
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.ObjectOutput;
+import java.io.ObjectOutputStream;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -36,6 +39,7 @@ import protocols.network.messages.CyclonMessage;
 import protocols.network.messages.CyclonMessageMerge;
 import protocols.network.timers.CyclonInfoTimer;
 import protocols.network.timers.CyclonSampleTimer;
+import utils.LogStats;
 import utils.ProtocolsIds;
 import utils.Stats;
 
@@ -345,10 +349,10 @@ public class Cyclon extends GenericProtocol {
 	// "getOldInConnections" and "getOldOutConnections" returns connections that
 	// have already been closed.
 	private void uponChannelMetrics(ChannelMetrics event, int channelId) {
-		int numberSent = 0;
-		int numberReceived = 0;
-		int numberBytesIn = 0;
-		int numberBytesOut = 0;
+		long numberSent = 0;
+		long numberReceived = 0;
+		long numberBytesIn = 0;
+		long numberBytesOut = 0;
 
 		for (ConnectionMetrics c : event.getInConnections()) {
 			numberReceived += c.getReceivedAppMessages();
@@ -374,12 +378,26 @@ public class Cyclon extends GenericProtocol {
 			numberBytesIn += c.getReceivedAppBytes();
 			numberBytesOut += c.getSentAppBytes();
 		}
-		
+
 		// Stores the msgs received, sent and failed
 		Stats.setNumberSent(numberSent);
 		Stats.setNumberReceived(numberReceived);
 		Stats.setNumberBytesIn(numberBytesIn);
 		Stats.setNumberBytesOut(numberBytesOut);
+
+		LogStats ls = new LogStats(numberSent, numberReceived, numberBytesOut, numberBytesIn);
+
+		try {
+			String userDir = System.getProperty("user.dir");
+			String path = userDir + "/AllLogs/log" + self.toString() + ".txt";
+			FileOutputStream f = new FileOutputStream(path);
+			ObjectOutput out = new ObjectOutputStream(f);
+			out.writeObject(ls);
+			out.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
 	}
 
 }
