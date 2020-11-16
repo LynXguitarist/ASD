@@ -110,6 +110,7 @@ public class BroadcastApp extends GenericProtocol {
 
 	private void uponExitTimer(ExitTimer exitTimer, long timerId) {
 		// Prints all the stats necessary for eval
+		logger.info(Stats.print());
 		logger.info("Exiting...");
 		System.exit(0);
 	}

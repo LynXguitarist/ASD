@@ -374,12 +374,11 @@ public class Cyclon extends GenericProtocol {
 			numberBytesIn += c.getReceivedAppBytes();
 			numberBytesOut += c.getSentAppBytes();
 		}
-		String nIn = "Number Msg In: " + numberReceived;
-		String bytesIn = "\nNumber Bytes In: " + numberBytesIn;
-		String nOut = "\nNumber Msg Out: " + numberSent;
-		String bytesOut = "\nNumber Msg Out: " + numberBytesOut;
-		String latency = "\nLatency: " + Stats.averageBroadcastLatency();
-		logger.info(nIn + bytesIn + nOut + bytesOut + latency);
+		// Stores the msgs received, sent and failed
+		Stats.setNumberSent(numberSent);
+		Stats.setNumberReceived(numberReceived);
+		Stats.setNumberBytesIn(numberBytesIn);
+		Stats.setNumberBytesOut(numberBytesOut);
 
 	}
 

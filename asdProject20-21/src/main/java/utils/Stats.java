@@ -95,6 +95,16 @@ public class Stats {
 		numberBytesOut = num;
 	}
 	
+	public static String print() {
+		String nIn = "Number Msg In: " + numberReceived;
+		String bytesIn = "\nNumber Bytes In: " + numberBytesIn;
+		String nOut = "\nNumber Msg Out: " + numberSent;
+		String bytesOut = "\nNumber Msg Out: " + numberBytesOut;
+		String latency = "\nLatency: " + Stats.averageBroadcastLatency();
+		String toString = nIn + bytesIn + nOut + bytesOut + latency;
+		return toString;
+	}
+	
 	/** 
 	 * Gets the diff between the last time a node sent the msg with the time of 
 	 * creation of the msg 
