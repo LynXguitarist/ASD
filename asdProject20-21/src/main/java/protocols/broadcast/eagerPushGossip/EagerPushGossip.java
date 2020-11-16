@@ -109,8 +109,6 @@ public class EagerPushGossip extends GenericProtocol {
 			int randomNumber;
 			Set<Integer> randomValues = new HashSet<>();
 
-			// PODEMOS GUARDAR OS HOSTS E VERIFICAR QUE NÃO ENVIA 2X PARA O MESMO PEER, 6
-			// linhas abaixo
 			for (int i = 0; i < fanout; i++) {
 				// This will generate a random number between 0 and Set.size - 1
 				randomNumber = random.nextInt(neighbours.size());

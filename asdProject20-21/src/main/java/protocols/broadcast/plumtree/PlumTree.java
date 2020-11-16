@@ -205,7 +205,6 @@ public class PlumTree extends GenericProtocol {
 
         //If we already received it once, do nothing (or we would end up with a nasty infinite loop)
         if (!received.containsKey(msg.getMid())) {
-           // logger.info("******PRIMEIRA_VEZ******");
             received.put(msg.getMid(),msg.getContent());
 
             //Deliver the message to the application (even if it came from it)
