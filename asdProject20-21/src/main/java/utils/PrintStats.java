@@ -6,7 +6,7 @@ import java.util.UUID;
 public class PrintStats {
 	public static void main(String[] args) throws FileNotFoundException {
 		String path = args[0];
-		
+
 		File[] files = new File(path).listFiles();
 
 		LogStats m = null;
@@ -41,14 +41,21 @@ public class PrintStats {
 				i++;
 			}
 		}
+		long msgLost = m.getNumberMsgReceived() - m.getNumberMsgTransmitted();
+		long bytesLost = m.getNumberBytesReceived() - m.getNumberBytesTransmitted();
+		if (msgLost < 0)
+			msgLost = 0;
+		if (bytesLost < 0)
+			bytesLost = 0;
+
 		System.err.println("Median Latency: " + val / i + "ms");
 		System.err.println("Total Msg In: " + m.getNumberMsgReceived());
 		System.err.println("Total Bytes In: " + m.getNumberBytesReceived());
 		System.err.println("Total Msg Out: " + m.getNumberMsgTransmitted());
 		System.err.println("Total Bytes Out: " + m.getNumberBytesTransmitted());
-		System.err.println("Total Msg Lost: " + (m.getNumberMsgReceived() - m.getNumberMsgTransmitted()));
-		System.err.println("Total Bytes Lost: " + (m.getNumberBytesReceived() - m.getNumberBytesTransmitted()));
-		
+		System.err.println("Total Msg Lost: " + msgLost);
+		System.err.println("Total Bytes Lost: " + bytesLost);
+
 	}
 }
 

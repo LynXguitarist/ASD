@@ -396,16 +396,17 @@ public class Cyclon extends GenericProtocol {
 			String userDir = System.getProperty("user.dir");
 			String folderPath = userDir + "/AllLogs/";
 			Files.createDirectories(Paths.get(folderPath));
-			
-			String path =  folderPath + "log" + self.toString() + ".txt";
-			FileOutputStream f = new FileOutputStream(new File(path), false);
+
+			String path = folderPath + "log" + self.getAddress().getHostAddress() + ".txt";
+			File file = new File(path);
+			FileOutputStream f = new FileOutputStream(file);
 			ObjectOutput out = new ObjectOutputStream(f);
 			out.writeObject(ls);
 			out.close();
+			logger.info("File created...");
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		logger.info("Channel metrics completed...");
 
 	}
 
