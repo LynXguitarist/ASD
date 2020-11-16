@@ -302,7 +302,9 @@ public class SimpleFullMembership extends GenericProtocol {
 		Stats.setNumberBytesOut(numberBytesOut);
 		
 		LogStats ls = new LogStats(numberSent, numberReceived, numberBytesOut, numberBytesIn);
-
+		
+		ls.joinMsgCreated(Stats.getMsgCreated());
+		ls.joinMsgSent(Stats.getMsgSent());
 		try {
 			String userDir = System.getProperty("user.dir");
 			String path = userDir + "/AllLogs/log" + self.toString() + ".txt";

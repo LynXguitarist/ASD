@@ -387,6 +387,8 @@ public class Cyclon extends GenericProtocol {
 
 		LogStats ls = new LogStats(numberSent, numberReceived, numberBytesOut, numberBytesIn);
 
+		ls.joinMsgCreated(Stats.getMsgCreated());
+		ls.joinMsgSent(Stats.getMsgSent());
 		try {
 			String userDir = System.getProperty("user.dir");
 			String path = userDir + "/AllLogs/log" + self.toString() + ".txt";

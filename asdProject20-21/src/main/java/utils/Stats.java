@@ -14,7 +14,7 @@ public class Stats {
 	private static long numberSent, numberReceived, numberBytesIn, numberBytesOut;
 
 
-	public Map<UUID, Long> getMsgCreated() {
+	public static Map<UUID, Long> getMsgCreated() {
 		return msgCreated;
 	}
 

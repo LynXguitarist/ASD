@@ -24,7 +24,6 @@ public class LogStats implements Serializable {
 
 
     public LogStats(Long nmt, Long nmr, Long nbt, Long nbr){
-
         numberMsgTransmitted=nmt;
         numberMsgReceived=nmr;
         numberBytesTransmitted=nbt;
