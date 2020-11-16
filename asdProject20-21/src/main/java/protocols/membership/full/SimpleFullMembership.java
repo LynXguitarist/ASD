@@ -309,9 +309,11 @@ public class SimpleFullMembership extends GenericProtocol {
 		ls.joinMsgCreated(Stats.getMsgCreated());
 		ls.joinMsgSent(Stats.getMsgSent());
 		try {
-			String userDir = System.getProperty("user.dir");
+			String userDir = Paths.get(System.getProperty("user.dir")).getParent().toString();
 			String folderPath = userDir + "/AllLogs/";
 			Files.createDirectories(Paths.get(folderPath));
+			
+			logger.info("Created dir in "+ folderPath);
 			
 			String path =  folderPath + "log" + self.getAddress().getHostAddress() + ".txt";
 			File file = new File(path);
