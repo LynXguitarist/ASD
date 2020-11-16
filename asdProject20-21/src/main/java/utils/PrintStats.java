@@ -4,17 +4,15 @@ import java.io.*;
 import java.util.UUID;
 
 public class PrintStats {
-	public static void main(String[] args) {
-		String userDir = System.getProperty("user.dir");
-		String path = userDir + "/AllLogs";
-
+	public static void main(String[] args) throws FileNotFoundException {
+		String path = args[0];
+		
 		File[] files = new File(path).listFiles();
 
 		LogStats m = null;
 		LogStats m1;
 		for (File file : files != null ? files : new File[0]) {
 			if (file.isFile()) {
-				m = WriteToFile.loadFromFile(file.getPath());
 				if (m == null) {
 					m = WriteToFile.loadFromFile(file.getPath());
 				} else {
@@ -34,7 +32,7 @@ public class PrintStats {
 			printMetrics(m);
 	}
 
-	public static void printMetrics(LogStats m) {
+	public static void printMetrics(LogStats m) throws FileNotFoundException {
 		int i = 0;
 		int val = 0;
 		for (UUID u : m.getMsgCreated().keySet()) {
@@ -50,6 +48,7 @@ public class PrintStats {
 		System.err.println("Total Bytes Out: " + m.getNumberBytesTransmitted());
 		System.err.println("Total Msg Lost: " + (m.getNumberMsgReceived() - m.getNumberMsgTransmitted()));
 		System.err.println("Total Bytes Lost: " + (m.getNumberBytesReceived() - m.getNumberBytesTransmitted()));
+		
 	}
 }
 

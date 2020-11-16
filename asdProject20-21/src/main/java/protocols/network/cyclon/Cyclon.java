@@ -1,10 +1,13 @@
 package protocols.network.cyclon;
 
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
 import java.net.InetAddress;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -391,14 +394,18 @@ public class Cyclon extends GenericProtocol {
 		ls.joinMsgSent(Stats.getMsgSent());
 		try {
 			String userDir = System.getProperty("user.dir");
-			String path = userDir + "/AllLogs/log" + self.toString() + ".txt";
-			FileOutputStream f = new FileOutputStream(path);
+			String folderPath = userDir + "/AllLogs/";
+			Files.createDirectories(Paths.get(folderPath));
+			
+			String path =  folderPath + "log" + self.toString() + ".txt";
+			FileOutputStream f = new FileOutputStream(new File(path), false);
 			ObjectOutput out = new ObjectOutputStream(f);
 			out.writeObject(ls);
 			out.close();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+		logger.info("Channel metrics completed...");
 
 	}
 
